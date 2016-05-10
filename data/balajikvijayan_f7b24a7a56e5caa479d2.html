@@ -1,45 +1,4 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.8/d3.min.js"></script>
-  <style>
-    circle {
-      opacity: 0.2;
-    }
-    body {
-        font-family: futura;
-    }
-    h2.title {
-      color: black;
-      text-align: center;
-    }
-    .axis {
-      font-family: arial;
-      font-size: 0.7em;
-    }
-    text {
-      fill: black;
-    }
-    .label {
-      font-size: 2em;
-    }
-    path {
-      fill: none;
-      stroke: black;
-      stroke-width: 1px;
-    }
-    .tick {
-      fill: none;
-      stroke: black;
-    }
-    .line {
-      fill: none;
-      stroke: #4eb0bb;
-      stroke-width: 1px;
-    }
-  </style>
-  <script>
+<script>
     function draw(data) {
     "use strict";
 
@@ -173,5 +132,3 @@
       */
       d3.csv("http://jay-oh-en.github.io/interactive-data-viz/data/airbnb/listings.csv", draw);
     </script>
-  </body>
-</html>

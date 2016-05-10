@@ -1,24 +1,3 @@
-<!DOCTYPE html>
-<meta charset="utf-8">
-<style>
-    body {
-        font:12px/20px 'Helvetica';
-    }
-    textarea, input {
-        width:100%;
-        height:20px;
-        margin:0;
-        padding:0;
-    }
-</style>
-<body>
-    <textarea>typing in a textarea does not trigger bindings</textarea>
-    <input value='typing in an input does not trigger bindings' />
-    <p>use arrow keys to navigate the circle</p>
-    <pre>
-    </pre>
-<script src="http://d3js.org/d3.v3.min.js"></script>
-<script src="keybinding.js"></script>
 <script>
 var width = 950, height = 300;
 var svg = d3.select("body").append("svg")
