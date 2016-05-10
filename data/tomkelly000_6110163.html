@@ -1,0 +1,122 @@
+<!doctype html>
+<html>
+  <head>
+		<title>
+			d3-dropdownmenu
+		</title>
+		<!-- dependencies -->
+		<script src='http://d3js.org/d3.v3.min.js'></script>
+		<script src='d3-dropdownmenu.js'></script>
+
+		<script>
+		function applyStyling(root) {
+			root.nodes() 
+				.style('border', '1px solid #ddd')
+				.style('padding', '4px 8px')
+				.style('background', '#eee')
+				.style('width', '100px')
+				.on('mouseenter', function() {
+					d3.select(this).transition() // 'this' is a DOM element
+						.style('background', '#ee3')
+				})
+				.on('mouseleave', function() {
+					d3.select(this).transition()
+						.style('background', '#eee')
+				})
+
+			root.childNodes() // make top level a little different
+				.style('background', '#ccc')
+				.style('width', '75px')
+				.on('mouseenter', function() {
+					d3.select(this).transition()
+						.style('background', '#cc3')
+				})
+				.on('mouseleave', function() {
+					d3.select(this).transition()
+						.style('background', '#ccc')
+				})
+		}
+		</script>
+	</head>
+	<body>
+		<div id='demo'></div>
+		<script>
+			d3.element.dropdownmenu('#demo')
+				.add({
+					'Option 1' : {
+						'0' : {
+							'a' : {
+								'i' : null,
+							},
+						},
+					},
+					'Option 2' : {
+						'0' : null,
+						'1' : null,
+					},
+					'Option 3' : {
+						'0' : null,
+						'1' : null,
+						'<span id="option3-2">2</span>' : null,
+					},
+					'Option 4' : {
+						'0' : {
+							'a' : null,
+							'b' : null,
+							'c' : null,
+							},
+						'1' : null,
+						'2' : null,
+						'3' : null,
+					},
+					'<a href="#">Test Link</a>' : {
+						'<a href="#">Child Link</a>' : null,
+					},
+					'Images' : {
+						'<img src="img1.jpg" width="100px" height="100px"/>' : null,
+						'<img src="img2.jpg" width="100px" height="100px"/>' : null,
+						'<img src="img3.jpg" width="100px" height="100px"/>' : null,
+					}
+				})
+				.show() // basic menu has been created
+				// example of tree traversal
+				.firstChildNode() // Option 1
+				.nextSiblingNode() // Option 2
+				.lastChildNode() // 1
+				.add({
+					'New Option 1' : null,
+					'New Option 2' : null,
+				})
+				.add({
+					'New Option 3' : null,
+				})
+				.lastChildNode()
+				.add({
+					'Option 2.1.3.A' : null,
+					'Option 2.1.3.B' : null,
+				})
+				.root() // get back to the root
+				// and use d3 methods as well
+				.call(function(root) {
+					root.select('#option3-2').style('color', 'blue')
+				})
+				.call(applyStyling) // defined in header
+				.call(function(root) {
+					root.childLink().horizontal() // make top level horizontal
+				})
+				.call(function(root) {
+					var option = root.firstChildNode();
+					for (var i = 0; option != null; option = option.firstChildNode()) {
+						option.style('color', '#0' + (i%10) + (i%10));
+						i+=3;
+					}
+				})
+				// center it
+				.call(function(root) {
+					root.style('position', 'relative')
+						.style('left', '50%')
+			    		.style('margin-left', -parseInt(root.childLink().style('width'))/2 + 'px');
+				})
+		</script>
+	</body>
+</html>

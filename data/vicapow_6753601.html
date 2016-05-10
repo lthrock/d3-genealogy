@@ -1,0 +1,39 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <style>
+      body{
+        margin: 0;
+      }
+      path {
+        stroke: white;
+        stroke-width: 2px;
+        fill: black;
+      }
+      svg {
+        background-color: black;
+      }
+    </style>
+  </head>
+  <body>
+    <script>
+      var svg = d3.select('body').append('svg').attr({width: 960, height: 500});
+      var data = d3.range(50, 650, 10).map(function(y_offset){
+        return d3.range(100, 700, 10).map(function(d){
+          var y = d;
+          if(y < 300 || y > 500) y = 50;
+          else y = 500;
+          return [d, y_offset - Math.random() * Math.random() * y / 10];
+        });
+      });
+      var line = d3.svg.line()
+        .x(function(d) { return d[0]; })
+        .y(function(d) { return d[1]; })
+        .interpolate("basis");
+      svg.selectAll('path').data(data)
+        .enter()
+        .append('path').attr('d', line);
+    </script>
+  </body>
+</html>

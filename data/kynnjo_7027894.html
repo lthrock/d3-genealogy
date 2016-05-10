@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>noob d3</title>
+<style>
+button{display:inline}
+#grid{background:#fff;border-collapse:collapse;}
+#grid td{border-style:solid;border-color:#eee;}
+#grid svg{display:block;}
+#grid path{fill:none;}
+#caption{margin-bottom: 5px;}
+</style>
+
+    <div id="caption" style="visibility: hidden">
+      <button>Cycle</button>
+      Curves grouped by the value of the "<span id="mode-label"></span>" factor;
+      (source: "<span id="input-file">loremipsum.tsv</span>")
+    </div>
+
+    <table id="grid"></table>
+
+    <script src="//code.jquery.com/jquery-1.10.2.min.js"></script>
+    <script src="//d3js.org/d3.v3.min.js"></script>
+
+    <script>
+
+d3.tsv(d3.select('#input-file').node().textContent, function(error, data) {
+
+  var XRANGE = [0, 2*Math.PI],
+      PLOT_RANGE_PADDING = 0.02;
+
+  var params = 'phi A omega'.split(' '),
+      pgetters = params.map(get),
+      params_set = d3.set(params),
+      factors = d3.keys(data[0]).filter(function (d) {
+                  return !params_set.has(d)
+                }),
+      fgetters = factors.map(get),
+      grid = build_grid(d3.max(factors.map(function (f) {
+               return levels(data, f).length;
+             }))),
+      get_class = mk_get_class(),
+      get_xy = mk_get_xy();
+
+  var paths = grid.select('g')
+      .selectAll('path')
+      .data(data)
+      .enter()
+    .append('svg:path')
+      .each(function (d) {
+         var classes = d3.zip(factors, fgetters.map(apply(d)))
+                         .map(function (args) {
+                            return get_class.apply(null, args);
+                          })
+                         .join(' ');
+         d3.select(this).classed(classes, true);
+       })
+      .datum(function (d) {
+         return get_xy(mk_fn.apply(null, pgetters.map(apply(d))), XRANGE);
+       });
+
+  var domains = d3.transpose(paths.data().map(d3.transpose))
+                  .map(function (a) {
+                     return pad_interval(d3.extent(d3.merge(a)),
+                                         PLOT_RANGE_PADDING);
+                   }),
+      svg = grid.select('svg'),
+      text_height = svg.select('text').node().getBBox().height,
+      ranges = [[0, parseInt(svg.attr('width'))],
+                [parseInt(svg.attr('height')), text_height]],
+      line = linedrawer(domains, ranges);
+      
+  paths.attr('d', function(d){ return line(d) });
+
+  var argmax =  factors
+               .map(function (f) {
+                 return [f, levels(data, f)];
+                })
+               .sort(function (a, b) {
+                 return b[1].length - a[1].length;
+                })[0],
+      maxfactor = argmax[0],
+      classes = argmax[1].map(function (lvl) {
+                  return get_class(maxfactor, lvl);
+                }),
+      mult = 360/classes.length,
+      start = 2/3,
+      step = Math.sqrt(5) - 2;
+
+  classes.map(function (c, i) {
+    grid.selectAll('.' + c)
+        .each(function (_, j) {
+           var hsl = d3.hsl(mult*(i + ((start + j * step) % 1)), 0.6, 0.6);
+           d3.select(this).style('stroke', hsl);
+        })
+  });
+
+  // instrument button
+
+  var nfactors = factors.length,
+      pick = -1;
+
+  $('button').click(function() {
+    var factor = factors[pick = (pick + 1) % nfactors],
+        lvls = levels(data, factor),
+        nlevels = lvls.length,
+        sels = lvls.map(function (lvl) { return '.' + get_class(factor, lvl) });
+
+    grid.selectAll('g')
+        .each(function (_, i) {
+           var g = this, label = '';
+           if (i < nlevels) {
+             label = factor + ': "' + lvls[i] + '"';
+             grid.selectAll(sels[i])
+                 .each(function(){ g.appendChild(this) });
+           }
+           d3.select(g).select('text').text(label);
+         });
+
+    $('#mode-label').text(factor);
+
+  }).click();
+
+  $("#caption").css('visibility', 'visible');
+});
+
+
+function get (key) {
+  return function (d) { return d[key]; }
+}
+
+function proj (aoo, key) {
+  return aoo.map(get(key));
+}
+
+function levels (data, factor) {
+  return d3.set(proj(data, factor)).values();
+}
+
+function build_grid (nvps) {
+  var WIDTH = 950,
+      SHAPE = {width: 250, height: 150},
+      BORDER_WIDTH = 10,
+      PADDING = 20;
+
+  var row,
+      table = d3.select('#grid'),
+      i = 0,
+      available_width = WIDTH - BORDER_WIDTH,
+      width_per_cell = SHAPE.width + 2 * PADDING + BORDER_WIDTH,
+      ncols = Math.floor(available_width/width_per_cell),
+      label,
+      box;
+
+  while (i < nvps) {
+    if (i % ncols == 0) { row = table.append('tr') }
+    label = row.append('td')
+       .style({'border-width': BORDER_WIDTH + 'px',
+               padding: PADDING + 'px'})
+     .append('svg')
+       .attr(SHAPE)
+     .append('g')
+     .append('text').text('placeholder');
+    box = label.node().getBBox();
+    label.attr({x: 0, y: box.height - 5});
+    i += 1;
+  }
+
+  return table;
+}
+
+function mk_get_class () {
+  var memo = d3.map(),
+      sep = String.fromCharCode(29),
+      prefix = '_',
+      next = -1;
+  return function (factor, level) {
+    var key = factor + sep + level;
+    return   memo.has(key)
+           ? memo.get(key)
+           : memo.set(key, prefix + (next += 1));
+  }
+}
+
+function apply (d) {
+  return function (g) { return g(d); };
+}
+
+function mk_fn(phi, A, omega) {
+  return function (x) { return A * Math.sin(omega * (x - phi)); }
+}
+
+function mk_get_xy() {
+  var NPTS = 200,
+      mesh = d3.range(NPTS),
+      scale = d3.scale
+                .linear()
+                .domain([0, NPTS - 1]);
+
+  return function (fn, xrange) {
+    var xs = mesh.map(scale.range(xrange));
+    return d3.zip(xs, xs.map(fn));
+  }
+}
+
+function pad_interval(interval, padding) {
+  return [interpolate(interval, -padding),
+          interpolate(interval, 1 + padding)];
+}
+
+function interpolate(interval, t) {
+  return interval[0] * (1 - t) + interval[1] * t;
+}
+
+function linedrawer(srcs, tgts) {
+  var xyfns = [0, 1].map(function (i) {
+    var s = d3.scale.linear().domain(srcs[i]).range(tgts[i]),
+        fmt = d3.format('.1f');
+    return function (d) { return fmt(s(d[i])); }
+  });
+  return d3.svg.line().x(xyfns[0]).y(xyfns[1]);
+}
+
+    </script>

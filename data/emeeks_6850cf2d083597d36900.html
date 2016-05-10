@@ -1,0 +1,120 @@
+
+<!DOCTYPE html>
+
+<head>
+  <title>Particle Edges Dendrogram</title>
+</head>
+<meta charset="utf-8">
+<style>
+
+svg {
+  height: 500px;
+  width: 500px;
+}
+
+</style>
+<body>
+<div id="viz">
+<svg></svg>
+</div>
+</body>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.16/d3.min.js"></script>
+<script src="d3-glyphEdge.js" charset="utf-8" type="text/javascript"></script>
+<script>
+
+d3.json("sotu.json", dendrogram);
+
+function dendrogram(data) {
+  data = data.values[0];
+
+  var blahColor = d3.scale.category20c();
+
+  treeChart = d3.layout.tree();
+      treeChart.size([500,460])
+      .children(function(d) {return d["values"]})
+
+  var linkGenerator = d3.svg.diagonal()
+
+  var chartG = d3.select("svg")
+    .append("g")
+    .attr("class", "dendrogram")
+    .attr("transform", "translate(0,20)");
+
+    chartG
+    .selectAll("g.link")
+    .data(treeChart.links(treeChart(data)))
+    .enter().append("g")
+    .attr("class", "link")
+    .append("path")
+    .attr("d", linkGenerator)
+    .style("fill", "none")
+    .style("stroke", "black")
+    .style("stroke-width", "4px")
+    .style("stroke-opacity", 0.05)
+    .each(function (d) {
+      //edges need a .frequency and a .particles
+      //.particles is an empty array that will collect particle datapoints for this edge
+      d.particles = [];
+      //.frequency is the number of particles per tick or, if the value is less than 1, the percent chance of a particle to be generated during that tick
+      d.frequency = Math.random() * 0.1;
+      //Why not a random color for the particles on each edge?
+      d.color = blahColor(parseInt(Math.random() * 20));
+      //And let's set a random speed for the particles on each edge, this is the number of pixels a particle moves per tick
+      d.speed = Math.random() + 1;
+    })
+
+    chartG
+    .selectAll("circle")
+    .data(treeChart(data))
+    .enter().append("circle")
+    .attr("r", 2)
+    .style("stroke-width", "0.5px")
+    .style("stroke-opacity", 0.75)
+    .attr("cx", function (d) {return d.x})
+    .attr("cy", function (d) {return d.y})
+    .style("fill", "white")
+    .style("stroke", "black")
+
+  var t = d3.timer(tick, 1000);
+
+  function tick(elapsed, time) {
+    console.log("t");
+    particles();
+  }
+
+}
+
+function particles() {
+
+    d3.selectAll("g.link")
+      .each(function (d, i) {
+
+        /* particle edges take an edge data object, an actual path from which to derive the particle position (hence why we use .node() to get the actual svg:path element associated with the selection), a width of the path to determine the jitter of the particles and a speed for the particles. */
+
+          d3_glyphEdge.mutate.particle(d, d3.select(this).select("path").node(), 3, d.speed);
+
+        /* d3_glyphEdge.mutate.particle mutates the .particles array of the edge sent to it, adding new particles, updating the position of existing particles and deleting particles that have reached the end of the path. We use that array to instantiate elements to represent each particle (here using SVG but you could also use canvas) */
+
+          d3.select(this).selectAll("circle")
+            .data(d.particles)
+            .enter()
+            .append("circle")
+            .style("fill-opacity", .85)
+            .style("fill", d.color)
+            .attr("r", 1.5);
+
+          d3.select(this).selectAll("circle")
+            .data(d.particles)
+            .exit()
+            .remove();
+
+          d3.select(this).selectAll("circle")
+            .attr("cx", function (p) {return p.x})
+            .attr("cy", function (p) {return p.y});
+      })
+
+}
+
+</script>

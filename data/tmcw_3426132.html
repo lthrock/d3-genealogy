@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src='http://api.tiles.mapbox.com/mapbox.js/v0.6.4/mapbox.js'></script>
+  <script src='http://d3js.org/d3.v2.min.js?2.9.3'></script>
+  <link
+      href='http://api.tiles.mapbox.com/mapbox.js/v0.6.4/mapbox.css'
+      rel='stylesheet' />
+  <style>
+    body { margin:0; padding:0; }
+    #map { position:absolute; top:0; bottom:0; width:100%; }
+    .d3-vec { position:absolute; }
+    path {
+      fill: #000;
+      fill-opacity: .2;
+      stroke: #fff;
+      stroke-width: 1.5px;
+    }
+
+    path:hover {
+      fill: brown;
+      fill-opacity: .7;
+    }
+  </style>
+</head>
+<body>
+<div id='map'></div>
+<script>
+  function folly() {
+      var f = {}, bounds, feature;
+      var div = d3.select(document.body)
+          .append("div")
+          .attr('class', 'd3-vec'),
+      svg = div.append('svg'),
+      g = svg.append("g");
+
+      f.parent = div.node();
+
+      // Use Leaflet to implement a D3 geographic projection.
+      f.project = function(x) {
+        var point = f.map.locationPoint({ lat: x[1], lon: x[0] });
+        return [point.x, point.y];
+      }
+
+      // Reposition the SVG to cover the features.
+      f.draw = function() {
+        var bounds = f.map.extent(),
+            bl = bounds.southWest(),
+            tr = bounds.northEast();
+        var bottomLeft = f.project([bl.lon, bl.lat]),
+            topRight = f.project([tr.lon, tr.lat]);
+
+        svg.attr("width", topRight[0] - bottomLeft[0])
+            .attr("height", bottomLeft[1] - topRight[1])
+            .style("margin-left", bottomLeft[0] + "px")
+            .style("margin-top", topRight[1] + "px");
+
+        g.attr("transform", "translate(" + -bottomLeft[0] + "," + -topRight[1] + ")");
+
+        path = d3.geo.path().projection(f.project);
+
+        feature.attr("d", path);
+      }
+
+      f.data = function(collection) {
+          bounds = d3.geo.bounds(collection);
+          feature = g.selectAll("path")
+              .data(collection.features)
+              .enter().append("path");
+          return f;
+      };
+
+      return f;
+  }
+  mapbox.auto('map', 'examples.map-vyofok3q', function(map) {
+      d3.json("us-states.json", function(collection) {
+          var l = folly().data(collection);
+          map.addLayer(l);
+          map.zoom(4).center({ lat: 37, lon: -90 });
+      });
+  });
+</script>
+</body>
+</html>
