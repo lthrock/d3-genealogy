@@ -1,27 +1,4 @@
-<!DOCTYPE html>
-<meta charset="utf-8">
-<title>noob d3</title>
-<style>
-button{display:inline}
-#grid{background:#fff;border-collapse:collapse;}
-#grid td{border-style:solid;border-color:#eee;}
-#grid svg{display:block;}
-#grid path{fill:none;}
-#caption{margin-bottom: 5px;}
-</style>
-
-    <div id="caption" style="visibility: hidden">
-      <button>Cycle</button>
-      Curves grouped by the value of the "<span id="mode-label"></span>" factor;
-      (source: "<span id="input-file">loremipsum.tsv</span>")
-    </div>
-
-    <table id="grid"></table>
-
-    <script src="//code.jquery.com/jquery-1.10.2.min.js"></script>
-    <script src="//d3js.org/d3.v3.min.js"></script>
-
-    <script>
+<script>
 
 d3.tsv(d3.select('#input-file').node().textContent, function(error, data) {
 

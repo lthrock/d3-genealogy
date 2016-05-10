@@ -1,13 +1,4 @@
-<!DOCTYPE html>
-<head>
-  <meta charset="utf-8">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
-  <script type='text/javascript' src='http://www.x3dom.org/download/x3dom.js'> </script>
-  <link rel='stylesheet' type='text/css' href='http://www.x3dom.org/download/x3dom.css'></link>
-</head>
-
-<body>
-  <script>
+<script>
 (function() {
   var width = 960, height = 540, n = 10, max = 100;
   var x3d = d3.select("body").append("x3d")
@@ -34,4 +25,3 @@
     .attr("size", (d,i) => `0.2 ${y(d)} 0.2`);
 }());
   </script>
-</body>

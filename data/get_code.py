@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import json, sys, getopt
+import json, sys, getopt, re
 
 # Usage: ./get_code.py -i <inputfile>
 
@@ -29,10 +29,12 @@ def main(argv):
     e = element["_source"]
     code = e["code"].encode('ascii', 'ignore')
     author = e["userId"]
-
-    filename = author + '_' + gistid + '.html'
-    outfile = open(filename, 'w')
-    outfile.write(code)
+    
+    code = get_js_only(code)
+    if(code != None): 
+      filename = author + '_' + gistid + '.html'
+      outfile = open(filename, 'w')
+      outfile.write(code)
   
 #  print e["created_at"]
 #  print e["updated_at"]
@@ -40,5 +42,15 @@ def main(argv):
 #  print e["readme"]
 #  print e["description"]
 
+def get_js_only(code):
+  re.DOTALL
+  re.MULTILINE
+  match = re.search('<script>.*</script>', code, re.DOTALL)
+  if(match != None):
+    return match.group(0)
+  else:
+    return None
+  
+  
 if __name__ == "__main__":
    main(sys.argv[1:])

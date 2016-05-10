@@ -1,23 +1,4 @@
-<!DOCTYPE HTML>
-<html>
-  <head>
-    <script src="http://d3js.org/d3.v3.min.js" charset="utf-8"></script>
-    <style>
-      body{
-        margin: 0;
-      }
-      path {
-        stroke: white;
-        stroke-width: 2px;
-        fill: black;
-      }
-      svg {
-        background-color: black;
-      }
-    </style>
-  </head>
-  <body>
-    <script>
+<script>
       var svg = d3.select('body').append('svg').attr({width: 960, height: 500});
       var data = d3.range(50, 650, 10).map(function(y_offset){
         return d3.range(100, 700, 10).map(function(d){
@@ -35,5 +16,3 @@
         .enter()
         .append('path').attr('d', line);
     </script>
-  </body>
-</html>
