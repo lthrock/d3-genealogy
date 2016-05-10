@@ -10,7 +10,7 @@ wr1 = csv.writer(primary_output, quoting=csv.QUOTE_ALL)
 wr2 = csv.writer(detail_output, quoting=csv.QUOTE_ALL)
 
 # Fetch moss results, b-e-a-utify
-url = "http://moss.stanford.edu/results/63201498/"
+url = "http://moss.stanford.edu/results/781444417/"
 f = urllib.urlopen(url)
 soup = BeautifulSoup(f.read(), "html.parser")
 
