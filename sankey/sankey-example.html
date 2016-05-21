@@ -60,10 +60,10 @@ var sankey = d3.sankey()
 var path = sankey.link();
  
 // load the data
-d3.json("dummy.json", function(graph) {
+d3.json("force-layout.json", function(graph) {
  
     var nodeMap = {};
-    graph.nodes.forEach(function(x) { nodeMap[x.name] = x; });
+    graph.nodes.forEach(function(x) { nodeMap[x.uid] = x; });
     graph.links = graph.links.map(function(x) {
       return {
         source: nodeMap[x.source],
@@ -89,16 +89,16 @@ d3.json("dummy.json", function(graph) {
 // add the link titles
   link.append("title")
         .text(function(d) {
-        return d.source.name + " → " + 
-                d.target.name + "\n" + format(d.value); });
+        return d.source.uid + " → " + 
+                d.target.uid + "\n" + format(d.value); });
  
 // add in the nodes
   var node = svg.append("g").selectAll(".node")
       .data(graph.nodes)
     .enter().append("g")
       .attr("class", "node")
-      .attr("id", function(d) { return "node_" + d.id} )
-      .attr("date", function(d) { return d.date; })
+      .attr("id", function(d) { return "node_" + d.uid} )
+      .attr("created_at", function(d) { return d.created_at; })
       .attr("transform", function(d) { 
       return "translate(" + d.x + "," + d.y + ")"; })
     .call(d3.behavior.drag()
@@ -112,12 +112,12 @@ d3.json("dummy.json", function(graph) {
       .attr("height", function(d) { return d.dy; })
       .attr("width", sankey.nodeWidth())
       .style("fill", function(d) { 
-      return d.color = color(d.name.replace(/ .*/, "")); })
+      return d.color = color(d.uid.replace(/ .*/, "")); })
       .style("stroke", function(d) { 
       return d3.rgb(d.color).darker(2); })
     .append("title")
       .text(function(d) { 
-      return d.name + "\n" + format(d.value); });
+      return d.uid + "\n" + format(d.value); });
  
 // add in the title for the nodes
   node.append("text")
@@ -126,7 +126,7 @@ d3.json("dummy.json", function(graph) {
       .attr("dy", ".35em")
       .attr("text-anchor", "end")
       .attr("transform", null)
-      .text(function(d) { return d.name; })
+      .text(function(d) { return d.uid; })
     .filter(function(d) { return d.x < width / 2; })
       .attr("x", 6 + sankey.nodeWidth())
       .attr("text-anchor", "start");
@@ -143,16 +143,17 @@ d3.json("dummy.json", function(graph) {
 
   Array.prototype.maxDate = function() {
     return stringToDate(this.reduce(function (p, v) {
-      return stringToDate(p.date) > stringToDate(v.date) ? p : v;
-    }).date);
+      return stringToDate(p.created_at) > stringToDate(v.created_at) ? p : v;
+    }).created_at);
   };
 
   Array.prototype.minDate = function() {
     return stringToDate(this.reduce(function (p, v) {
-      return stringToDate(p.date) < stringToDate(v.date) ? p : v;
-    }).date);
+      return stringToDate(p.created_at) < stringToDate(v.created_at) ? p : v;
+    }).created_at);
   };
 
+  console.log(sankey.nodes());
   var startDate = sankey.nodes().minDate();
   var endDate = sankey.nodes().maxDate();
 
@@ -163,13 +164,13 @@ d3.json("dummy.json", function(graph) {
 
   var newCoordinates = sankey.nodes().map(function(d) {
     var oldX = d.x;
-    var newX = (stringToDate(d.date).getTime() - startDate.getTime())  / timeToSizeRatio;
+    var newX = (stringToDate(d.created_at).getTime() - startDate.getTime())  / timeToSizeRatio;
   
-    d3.select('#node_' + d.id).attr("transform", 
+    d3.select('#node_' + d.uid).attr("transform", 
         "translate(" + (d.x = newX) + "," + (d.y = d.y) + ")");
     sankey.relayout();
     link.attr("d", path);
-
+    // sankey.link()
     return newX;
   });
 
