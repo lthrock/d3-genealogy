@@ -1,0 +1,55 @@
+<script>
+    // Feel free to change or delete any of the code you see!
+    var svg = d3.select("body").append("svg");
+    var url = "https://numeracy.co/projects/382368K6Bkx/data?format=csv";
+     d3.csv(url)
+     .row(function(d) {
+       return {
+         name: d.name,
+         age: parseFloat(d.age),
+         date: new Date(d.month + "/" + d.day + "/" + d.year) 
+       }
+     })
+     .get(function(err, data) {
+      var counted = [];
+      data.forEach(function(d) {        
+        if (d.age) {
+        	counted.push(d);
+        }
+      });
+
+      var maxAge = d3.max(counted, function(d, i) { return d.age});
+      console.log(maxAge)
+
+      var yScale = d3.scale.linear()
+      	.domain([0, maxAge])
+      	.range([500, 10]);
+      
+      
+      var dateExtent = d3.extent(counted, function(d) {
+        return d.date
+      })
+      var xscale = d3.time.scale()
+        .domain(dateExtent)
+        .range([10, 900])
+      
+			var circles = svg.selectAll("circle").data(counted);
+    	
+      circles.enter()
+      	.append("circle")
+      	.attr({
+        	cx: function(d, i) {
+            return i * 25
+          },
+        cy: function(d, i) {return yScale(d.age)},
+        r: 10
+      })
+      .on("click", function(d, i) {
+          console.log("clicked", d, i);
+      })
+    
+      
+    });
+
+    console.log("you are now rocking with d3", d3);
+  </script>

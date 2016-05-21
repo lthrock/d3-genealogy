@@ -1,0 +1,35 @@
+<script>
+
+var data = [1,2,3,4,5];
+
+var update = function() {
+  //////////////////////////////////
+  d3.select("#sec1").selectAll('p')
+    .data(data).enter().append('p')
+    .text(function(d) { return d; })
+    .attr('class', 'enter');
+
+  //////////////////////////////////
+  var sec2_update = d3.select("#sec2").selectAll('p').data(data);
+  sec2_update.enter().append('p');
+
+  // After call to append, enter selection is merged with update selection
+  // This will modify both the update and enter section
+  sec2_update.text(function(d) { return d;}).style('color', 'violet');
+
+  ///////////////////////////////////
+  var sec3_update = d3.select("#sec3").selectAll('p').data(data);
+
+  // Style the update selection and enter selection separately.
+  sec3_update.attr('class', 'update');
+  sec3_update.enter().append('p').attr('class', 'enter')
+
+  // Set the text on the update selection, after we have appended to enter selection.
+  // This will modify all of the paragraphs.
+  sec3_update.text(function(d) { return d;});
+
+};
+
+setTimeout(update, 2000);
+
+</script>

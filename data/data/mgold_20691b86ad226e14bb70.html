@@ -1,0 +1,65 @@
+<script>
+            var margin = {top: 20, right: 20, bottom: 30, left: 112},
+                width = 960 - margin.left - margin.right,
+                height = 800 - margin.top - margin.bottom;
+
+            var x = d3.scale.linear()
+                .range([0, width]);
+
+            var y = d3.scale.ordinal()
+                .rangeRoundBands([0, height-margin.bottom], 0.1);
+
+            var xAxis = d3.svg.axis()
+                .scale(x)
+                .orient("bottom");
+
+            var yAxis = d3.svg.axis()
+                .scale(y)
+                .orient("left");
+
+            d3.csv("no-ceilings-data.csv", function(row){
+                //accessor to convert to numbers
+                var obj = {}
+                Object.keys(row).forEach(function(k){
+                    var v = row[k]
+                    obj[k] = +v || v;
+                })
+                return obj
+            }, function(err, data){
+                if (err) return console.error(err);
+                data = data.filter(function(d){return d.population > 5});
+                data.sort(function(a,b){return d3.descending(a.forests, b.forests)})
+                var cutoff = 42;
+                if (data.length > cutoff){ data = data.slice(0, cutoff) }
+
+                x.domain([0, d3.max(data, function(d){return d.forests})])
+                y.domain(data.map(function(d){return d.country}))
+
+                var svg = d3.select("svg");
+
+                svg.append("g")
+                    .attr("class", "x axis")
+                    .attr("transform", "translate(" + margin.left + "," + (height-margin.bottom) + ")")
+                    .call(xAxis);
+
+                svg.append("g")
+                    .attr("class", "y axis")
+                    .attr("transform", "translate(" + margin.left + "," + 0 + ")")
+                    .call(yAxis)
+                    .selectAll("text").attr("dx", "6px")
+                svg.append("text")
+                    .attr("x", margin.left + width/2)
+                    .attr("y", height+10)
+                    .attr("class", "centered")
+                    .text("Percent of surface area that is forested")
+
+                svg.selectAll("rect")
+                   .data(data)
+                   .enter()
+                   .append("rect")
+                   .attr("x", margin.left)
+                   .attr("y", function(d){return y(d.country)})
+                   .attr("height", y.rangeBand())
+                   .attr("width", function(d){return x(d.forests)})
+            })
+        </script>

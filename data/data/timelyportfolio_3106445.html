@@ -1,0 +1,259 @@
+<script>
+            var perfdata = new Array();
+
+            var margin = {top: 120, right: 60, bottom: 60, left: 60},
+                width = 1000 - margin.right - margin.left,
+                height = 550 - margin.top - margin.bottom;
+            
+            var x = d3.time.scale()
+                .range([0, width - 60]);
+            
+            var y = d3.scale.linear()
+                .range([height - 20, 0]);
+            
+            var duration = 1500,
+                delay = 500;
+            
+            var color = d3.scale.category10();
+            
+            var svg = d3.select("body").append("svg")
+                .attr("width", width + margin.right + margin.left)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+            
+            var parse = d3.time.format("%m/%d/%Y").parse, format = d3.time.format("%Y"),
+              perfdata = new Array();   
+         </script><script> var data = {
+   "cDataSet":[      {
+         "date":"12/31/1990",
+         "portfolio":"0",
+         "sp500":"0"
+      },
+      {
+         "date":"12/31/1991",
+         "portfolio":"16.27",
+         "sp500":"30.47"
+      },
+      {
+         "date":"12/31/1992",
+         "portfolio":"7.99",
+         "sp500":"7.62"
+      },
+      {
+         "date":"12/31/1993",
+         "portfolio":"6.55",
+         "sp500":"10.08"
+      },
+      {
+         "date":"12/31/1994",
+         "portfolio":"0.44",
+         "sp500":"1.32"
+      },
+      {
+         "date":"12/31/1995",
+         "portfolio":"16.08",
+         "sp500":"37.58"
+      },
+      {
+         "date":"12/31/1996",
+         "portfolio":"11.56",
+         "sp500":"22.96"
+      },
+      {
+         "date":"12/31/1997",
+         "portfolio":"18.2",
+         "sp500":"33.36"
+      },
+      {
+         "date":"12/31/1998",
+         "portfolio":"13.98",
+         "sp500":"28.58"
+      },
+      {
+         "date":"12/31/1999",
+         "portfolio":"9.09",
+         "sp500":"21.04"
+      },
+      {
+         "date":"12/31/2000",
+         "portfolio":"0.13",
+         "sp500":"-9.1"
+      },
+      {
+         "date":"12/31/2001",
+         "portfolio":"-4.83",
+         "sp500":"-11.89"
+      },
+      {
+         "date":"12/31/2002",
+         "portfolio":"-7.81",
+         "sp500":"-22.1"
+      },
+      {
+         "date":"12/31/2003",
+         "portfolio":"16.2",
+         "sp500":"28.68"
+      },
+      {
+         "date":"12/31/2004",
+         "portfolio":"7.97",
+         "sp500":"10.88"
+      },
+      {
+         "date":"12/31/2005",
+         "portfolio":"5.57",
+         "sp500":"4.91"
+      },
+      {
+         "date":"12/31/2006",
+         "portfolio":"11.69",
+         "sp500":"15.79"
+      },
+      {
+         "date":"12/31/2007",
+         "portfolio":"6.92",
+         "sp500":"5.49"
+      },
+      {
+         "date":"12/31/2008",
+         "portfolio":"-25",
+         "sp500":"-37"
+      },
+      {
+         "date":"12/31/2009",
+         "portfolio":"19.92",
+         "sp500":"26.46"
+      },
+      {
+         "date":"12/31/2010",
+         "portfolio":"13.59",
+         "sp500":"15.06"
+      },
+      {
+         "date":"12/31/2011",
+         "portfolio":"-1.58",
+         "sp500":"2.11"
+      }
+    ]
+ };</script>        <script>
+                var inc = 0;
+            
+                data = data.cDataSet;
+                
+                data.forEach( function(d) {
+                    for (key in d) {
+                        if ( key != "date" ) {
+                            perfdata[inc]  = { date: parse(d.date) , perf : parseFloat(d[key]), symbol : key };
+                            inc = inc + 1;
+                        }
+                    };
+                });
+                  
+                //if we want to filter only some set of what is there
+                //stocks = perfdata.filter(function(d) { return d.symbol in filter; });
+                
+                // Nest stock values by symbol.
+                symbols = d3.nest()
+                  .key(function(d) { return d.symbol; })
+                  .entries(perfdata);
+                
+                // Parse dates and numbers. We assume values are sorted by date.
+                // Also compute the maximum price per symbol, needed for the y-domain.
+                //symbols.forEach(function(s) {
+                //    s.values.forEach(function(d) { d.date = parse(d.date); d.price = +d.price; });
+                //});
+                
+                // Sort by maximum price, descending.
+                //symbols.sort(function(a, b) { return b.maxPrice - a.maxPrice; });
+                
+                // Compute the minimum and maximum date across symbols.
+                x.domain([
+                    d3.min(symbols, function(d) { return d.values[0].date; }),
+                    d3.max(symbols, function(d) { return d.values[d.values.length - 1].date; })
+                ]);
+                
+                var g = svg.selectAll("g")
+                    .data(symbols)
+                    .enter().append("g")
+                        .attr("class", "symbol");  
+                                
+            groupedBar();
+            
+            function groupedBar() {
+                  x = d3.scale.ordinal()
+                      .domain(symbols[0].values.map(function(d) { return d.date; }))
+                      .rangeBands([0, width - 60], .1);
+                
+                  var x1 = d3.scale.ordinal()
+                      .domain(symbols.map(function(d) { return d.key; }))
+                      .rangeBands([0, x.rangeBand()]);
+    
+                var y0 = Math.max(Math.abs(d3.min(symbols.map(function(d) { return d3.min(d.values.map(function(d) { return d.perf; })); }))), d3.max(symbols.map(function(d) { return d3.max(d.values.map(function(d) { return d.perf; })); })));                
+                y
+                    .domain([-y0, y0])
+                    //.domain([d3.min(symbols.map(function(d) { return d3.min(d.values.map(function(d) { return d.perf; })); })), d3.max(symbols.map(function(d) { return d3.max(d.values.map(function(d) { return d.perf; })); }))])
+                    .range([height, 0])
+                    .nice();
+                
+                var yAxis = d3.svg.axis().scale(y).orient("left");                            
+
+                svg.selectAll(".labels")
+                    .data(symbols[0].values.map(function(d) { return d.date; }))
+                    .enter().append("text")
+                        .attr("class", "labels")
+                        .attr("text-anchor", "middle")
+                        .attr("x", function(d,i) { return x(i) + x.rangeBand() / 2 ; })
+                        .attr("y", height / 2 + 15)
+                        .text(function(d) {return format(d) })
+                        .style("fill-opacity", 1);
+
+                
+                  var g = svg.selectAll(".symbol");
+                
+                  var t = g.transition()
+                      .duration(duration);
+                      
+                    //got working with lots of help but this section particularly dedicated to http://stackoverflow.com/questions/10127402/bar-chart-with-negative-values
+                  g.each(function(p, j) {
+                    d3.select(this).selectAll("rect")
+                        .data(function(d) { return d.values; })
+                      .enter().append("rect")
+                        .attr("x", function(d) { return x(d.date) + x1(p.key); })
+                        .attr("y", function(d, i) { return y(Math.max(0, d.perf)); })                        
+                        //.attr("y", function(d) { return y(d.perf); })
+                        .attr("width", x1.rangeBand())
+                        .attr("height", function(d, i) { return Math.abs(y(d.perf) - y(0)); })                        
+                        //.attr("height", function(d) { return height - y(d.perf); })
+                        .style("fill", color(p.key))
+                        .style("fill-opacity", 1e-6)                    
+                      .transition()
+                        .duration(duration)
+                        .style("fill-opacity", 1);
+                      
+                    d3.select(this).selectAll("text")
+                        .data(function(d) { return d.values; })
+                        .enter().append("text")
+                            .attr("x", function(d) { return x(d.date) + x1(p.key) + x1.rangeBand() / 2 ; })
+                            .attr("y", function(d, i) { return y(d.perf) ; })
+                            .attr("text-anchor", "middle")                        
+                            .text(function(d) { return d.perf; })
+                            .style("fill-opacity", 1e-6)                    
+                       .transition()
+                        .duration(duration)
+                        .style("fill-opacity", 1);
+                  });            
+                        
+                    //svg.append("g")
+                    //    .attr("class", "x axis")
+                    //    .call(d3.svg.axis().scale(x).orient("bottom"));
+                    
+                    svg.append("g")
+                        .attr("class", "y axis")
+                        .call(yAxis);
+                    //    .attr("y1", 0)
+                    //    .attr("y2", height);
+                
+            }
+               
+        </script>

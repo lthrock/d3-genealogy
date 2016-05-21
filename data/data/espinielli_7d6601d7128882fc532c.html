@@ -1,0 +1,113 @@
+<script>
+
+var width = 1200,
+    height = 700,
+    speed = 1e-2;
+
+var wflags = "https://gist.githubusercontent.com/espinielli/5107491/raw/world-country-flags.tsv",
+    w110 = "https://gist.githubusercontent.com/mbostock/4090846/raw/world-110m.json",
+    wnames = "https://gist.githubusercontent.com/mbostock/4090846/raw/world-country-names.tsv";
+
+var projection = d3.geo.robinson()
+    .scale(180)
+    .translate([width / 2, height / 2])
+    .precision(.1);
+
+var graticule = d3.geo.graticule();
+
+var canvas = d3.select("body").append("canvas")
+    .attr("width", width)
+    .attr("height", height);
+
+var context = canvas.node().getContext("2d");
+
+var path = d3.geo.path()
+    .projection(projection)
+    .context(context);
+
+// clips the canvas with provided path function
+// if pathFunction is an array, clips with all functions
+function clip(pathFunction) {
+  ctx.beginPath();
+  if (Array.isArray(pathFunction)) pathFunction.forEach(execute);
+  else pathFunction();
+  ctx.clip();
+}
+
+function execute(fn) {
+  return fn();
+}
+
+var q = queue()
+  .defer(d3.json, w110)
+	.defer(d3.tsv, wnames)
+  .defer(d3.tsv, wflags)
+  .await(ready);
+
+
+function ready(error, world, names, flags) {
+	if (error) {
+		alert('error: ' + error);
+		return;
+	}
+
+  var land = topojson.feature(world, world.objects.land),
+      countries = topojson.feature(world, world.objects.countries).features,
+      borders = topojson.mesh(world, world.objects.countries,
+                              function(a, b) { return a !== b; }),
+      grid = graticule();
+
+  flags.forEach(function (d) { d.id = +d.id;});
+  flags.sort(function(a,b) {
+    return +a.id < +b.id ? -1 : +a.id > +b.id ? +1 : 0;
+  });
+
+  countries = countries.filter(function(d) {
+    return names.some(function(n) {
+      if (d.id == n.id) {
+        return d.name = n.name;
+      }
+    });
+  });
+  
+  countries = countries.filter(function(d) {
+    return flags.some(function(n) {
+      if (d.id == n.id) {
+        var bounds = path.bounds(d);
+        if (bounds[0][0] < 0) bounds[0][0] = 0;
+        if (bounds[1][0] > width) bounds[1][0] = width;
+        if (bounds[0][1] < 0) bounds[0][1] = 0;
+        if (bounds[1][1] < 0) bounds[1][1] = height;
+    
+        d.bounds = bounds; 
+        
+        return d.url = n.url;
+      }
+    });
+  });
+
+  d3.timer(function(elapsed) {
+    projection.rotate([speed * elapsed, 0]);
+
+    context.clearRect(0, 0, width, height);
+
+    context.beginPath();
+    path(land);
+    context.fillStyle = "#222";
+    context.fill();
+
+    context.beginPath();
+    path(borders);
+    context.lineWidth = .5;
+    context.strokeStyle = "#fff";
+    context.stroke();
+
+    context.beginPath();
+    path(grid);
+    context.lineWidth = .5;
+    context.strokeStyle = "rgba(119,119,119,.5)";
+    context.stroke();
+  });
+}
+
+</script>

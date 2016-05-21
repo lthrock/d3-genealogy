@@ -1,0 +1,52 @@
+<script>
+    var sampleData = [1, 2, 3, 4, 5, 10, 6, 2, 9, 13, 54, 30];
+
+    drawBars(sampleData);
+
+    function drawBars(data){
+
+    var y = data;
+    var x = data.map(function(dataPoint, index){
+      return index;
+    });
+
+    var xPosition = d3.scale.ordinal()
+      .domain(x)
+      .rangeRoundBands([0, 800], 0.2);
+
+    var dataColor = d3.scale.category10(x)
+      .domain(x);
+
+    var eachDataPoint = d3.select("svg")
+      .selectAll("rect")
+      .data(data);
+
+    eachDataPoint.enter()
+      .append("rect");
+
+    eachDataPoint
+      .attr("x", function(dataItem, index){
+        return xPosition(index);
+      })
+      .attr("y", function(){
+        return 0;
+      })
+      .attr("width", xPosition.rangeBand)
+      .attr("height", function(dataItem, index){
+        return dataItem * 10;
+      })
+      .attr("fill", function(dataItem, index){
+        return dataColor(index);
+      })
+      .on('mouseenter', function(dataItem, index){
+        d3.select(this).attr("fill", "blue");
+      })
+      .on('mouseout', function(dataItem, index){
+        var originalColor = dataColor(index);
+        d3.select(this).attr("fill", originalColor);
+      });
+
+    eachDataPoint.exit()
+      .remove();
+  }
+  </script>

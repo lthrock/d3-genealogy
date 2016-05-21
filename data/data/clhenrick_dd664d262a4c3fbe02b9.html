@@ -1,0 +1,64 @@
+<script>
+
+        /********************************************************
+          MapBox JS code credit: 
+          https://www.mapbox.com/mapbox.js/example/v1.0.0/plain-leaflet/  
+        ********************************************************/
+        
+        var mapboxTiles = L.tileLayer('https://{s}.tiles.mapbox.com/v3/chenrick.k94zehfr/{z}/{x}/{y}.png');
+
+        var params = {
+          center: [0,0],
+          minZoom: 2, 
+          maxZoom: 4,
+          zoom: 3,        
+        };
+
+        var map = L.map('map', params)
+            .addLayer(mapboxTiles);
+
+        /********************************************************
+          D3 JS code credit: http://bost.ocks.org/mike/leaflet/  
+        ********************************************************/
+
+        /* set up the svg object in realtionship to the Leaflet map */
+        var svg = d3.select(map.getPanes().overlayPane).append("svg"),
+              g = svg.append("g").attr("class", "leaflet-zoom-hide");
+
+        d3.json("ne_10m_time_zones.json", function(collection) {
+          
+          console.log("collection: ", collection);
+
+          var transform = d3.geo.transform({point: projectPoint}),
+                path = d3.geo.path().projection(transform);
+
+          var feature = g.selectAll("path")
+                .data(collection.features)
+              .enter().append("path");
+          
+          map.on("viewreset", reset);
+          reset();
+
+          function reset(){
+            var bounds = path.bounds(collection),
+            topLeft = bounds[0],
+            bottomRight = bounds[1];    
+
+            svg .attr("width", bottomRight[0] - topLeft[0])
+                  .attr("height", bottomRight[1] - topLeft[1])
+                  .style("left", topLeft[0] + "px")
+                  .style("top", topLeft[1] + "px");
+
+            g   .attr("transform", "translate(" + -topLeft[0] + "," + -topLeft[1] + ")");
+
+            feature.attr("d", path);
+          }             
+
+          function projectPoint(x, y) {
+            var point = map.latLngToLayerPoint(new L.LatLng(y, x));
+            this.stream.point(point.x, point.y);
+          }
+
+        });
+
+      </script>

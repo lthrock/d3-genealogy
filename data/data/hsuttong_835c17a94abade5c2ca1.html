@@ -1,0 +1,31 @@
+<script>
+    var margin = {top: 14, right: 10, bottom: 20, left: 10};
+    var width = 960 - margin.left - margin.right;
+    var height = 500 - margin.top - margin.bottom;
+   
+    var svg = d3.select("body").append("svg")
+    	.attr("width", width + margin.left + margin.right)
+    	.attr("height", height + margin.top + margin.bottom)
+    	.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    var g = svg.append('g')
+    	.attr("transform", "translate(0, -82)");
+   
+    var data = [];
+   	d3.json("pics.json", function(error, d){
+      if (error) throw error;
+      
+    	data = d.data.children; //tricky, narrow to the children arr b4 assignment
+    });
+      
+   
+    //create our circle souls
+    d3.select('svg g').selectAll('circle')
+    .data(data)
+    .enter().append('circle')
+    	.attr({
+    		cx: function(d, i){ return (80 + i * 27) },
+        cy: function(d, i){ return d.data.score },
+      	r: 10
+    	});
+  </script>

@@ -1,0 +1,100 @@
+<script>
+
+// Bar chart view
+/////////////////////////////////////
+
+var BarChartView = Backbone.View.extend({
+	el: ".chart",
+	chart: null,
+	chartSelection: null,
+	initialize: function() {
+        var that = this;
+		_.bindAll(this, 'render', 'update');
+    	this.model.bind('change:data', this.render);
+    	this.model.bind('change:config', this.update);
+		chart = d3.custom.barChart();
+		chart.config(this.model.get('config'));
+		chart.on('customHover', function(d, i){ console.log('hover', d, i); });
+        this.model.fetch();
+        this.renderPlaceholder();
+	},
+    renderPlaceholder: function() {
+        this.chartSelection = d3.select(this.el)
+            .datum([{key: '', value: 0}])
+            .call(chart);
+    },
+	render: function() {
+		this.chartSelection = d3.select(this.el)
+		    .datum(this.model.get('data'))
+		    .call(chart);
+	},
+	update: function() {
+		this.chartSelection.call(chart.config(this.model.get('config')));
+	}
+});
+
+// Buttons view
+/////////////////////////////////////
+
+var ControlView = Backbone.View.extend({
+	el: ".control",
+	events: {
+		"click .update-config": "updateConfig",
+		"change .filter-lang": "filterLang"
+	},
+	updateConfig: function() {
+		var newConfig = {width: this._randomInt(1200, 800)};
+		this.model.set({config: newConfig});
+	},
+    filterLang: function(e){
+        this.model.filterLangBy(e.target.value);
+    },
+	_randomInt: function(_maxSize, _minSize){ 
+		var minSize = _minSize || 1;
+		return ~~(Math.random() * (_maxSize - minSize)) + minSize; 
+	}
+});
+
+// Bar chart data
+/////////////////////////////////////
+
+var BarChartData = Backbone.Model.extend({
+    url: 'chart.json',
+	defaults: {
+		data: [],
+        dimension: {},
+		config: {height: 200, width: 800}
+    },
+    parse: function(_json) {
+        var cf = new crossfilter(_json.yt_abs_views_by_vid);
+        var dimensions = this.get('dimension');
+        dimensions.brands = cf.dimension(function(d) { return d.brand_name; });
+        dimensions.langName = cf.dimension(function(d) { return d.lang_name; });
+        var data = this._getTopOfSum('brands', 'all_time_views', 10);
+        this.set({data: data});
+    },
+    filterLangBy: function(_value) {
+        this.get('dimension').langName.filterExact(_value);
+        this.set({data: this._getTopOfSum('brands', 'all_time_views', 10)});
+    },
+    _getTopOfSum: function(_dimensionName, _aggregateValueName, _topK){
+        function reduceAdd(p, v){ p += v[_aggregateValueName]; return p; }
+        function reduceRemove(p, v){ p -= v[_aggregateValueName]; return p; }
+        function reduceInitial(){ return 0}
+        var data = this.get('dimension')[_dimensionName].group()
+            .reduce(reduceAdd, reduceRemove, reduceInitial)
+            .top(_topK)
+            .filter(function(d, i){ return d.value > 0; });
+        return data;
+    }
+
+});
+
+// Usage
+/////////////////////////////////////
+
+var barChartModel = new BarChartData();
+var controlView = new ControlView({model: barChartModel});
+var barChartView = new BarChartView({model: barChartModel})
+
+</script>

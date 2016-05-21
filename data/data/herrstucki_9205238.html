@@ -1,0 +1,65 @@
+<script>
+
+var width = 960,
+    height = 500,
+    data = [];
+
+var x = d3.scale.linear()
+  .domain([0, 1])
+  .range([0, width]);
+
+var y = d3.scale.linear()
+  .domain([0, 1])
+  .range([150, height - 150]);
+
+var r = d3.scale.sqrt()
+  .domain([0, 1])
+  .range([0, 30]);
+
+function render() {
+  // Make sure the SVG element only gets created once.
+  var svg = d3.select('body').selectAll('svg').data([0]);
+  svg.enter().append('svg')
+    .attr('width', width)
+    .attr('height', height);
+
+  var item = svg.selectAll('circle')
+    .data(data, function(d) { return d.key; });
+
+  item.enter().append('circle')
+    .attr('class', 'item')
+    .attr('r', function(d) { return r(d.r); })
+    .attr('cx', function(d) { return x(d.x); })
+    .attr('cy', 0)
+    .style('stroke', '#3E6E9C')
+  .transition().duration(1000)
+    .attr('cy', function(d) { return y(d.y); })
+    .style('stroke', '#F288A5');
+
+  item.exit().filter(':not(.exiting)') // Don't select already exiting nodes
+    .classed('exiting', true)
+  .transition().duration(1000)
+    .attr('cy', height)
+    .style('stroke', '#3E6E9C')
+    .remove();
+}
+
+var circlesCreated = 0;
+
+function add() {
+  data.push({key: Date.now(), x: Math.random(), y: Math.random(), r: Math.random()});
+  render();
+  setTimeout(data.length < 100 ? add : remove, 5);
+}
+
+function remove() {
+  data = data.slice(1);
+  render();
+  if (++circlesCreated === 1000) console.timeEnd('1000 circles');
+  setTimeout(data.length > 0 ? remove : add, 5);
+}
+
+console.time('1000 circles');
+add();
+
+</script>

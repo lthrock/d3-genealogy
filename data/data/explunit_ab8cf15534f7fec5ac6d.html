@@ -1,0 +1,67 @@
+<script>
+    var charts = [];
+
+    d3.json("flare.json", function(error, root) {
+    
+      var countAccessorFn = function(d) { return 1; };
+      var sizeAccessorFn = function(d) { return d.size; };
+
+      charts.push(makeSunburst(root, countAccessorFn));
+      charts.push(makeSunburst(root, sizeAccessorFn));
+
+      function makeSunburst(dataRoot, valueAccessor) {
+
+        var width = 480, height = 480;
+        var radius = (Math.min(width, height) / 2) - 60;
+        var color = d3.scale.category20c();
+        var angleScale = d3.scale.linear().range([0, 2 * Math.PI]);
+        var ringRadiusScale = d3.scale.linear().range([0, radius]);
+
+        var svg = d3.select("#viz").append("svg")
+            .attr({width: width, height: height});
+        
+        var container = svg.append("g")
+            .attr("transform", "translate(" + width / 2 + "," + height * .52 + ")");
+
+        var partition = d3.layout.partition().sort(null).value(valueAccessor);
+        var nodes = partition.nodes(dataRoot);
+
+        var arc = d3.svg.arc()
+          .startAngle(function(d) { return Math.max(0, Math.min(2 * Math.PI, angleScale(d.x))); })
+          .endAngle(function(d) { return Math.max(0, Math.min(2 * Math.PI, angleScale(d.x + d.dx))); })
+          .innerRadius(function(d) { return Math.max(0, ringRadiusScale(d.y)); })
+          .outerRadius(function(d) { return Math.max(0, ringRadiusScale(d.y + d.dy)); });
+
+        var path = container.selectAll("path")
+            .data(nodes)
+          .enter().append("path")
+            .attr("display", function(d) { return d.depth ? null : "none"; }) // hide inner ring
+            .attr("d", arc)
+            .style("fill", function(d) { return color((d.children ? d : d.parent).name); });
+
+        return {
+          addToRadius: function(radiusChange) {
+            radius += radiusChange;
+            ringRadiusScale.range([0, radius]);
+            // leave all data the same but redraw arcs based on new radius
+            path.transition().attr('d', arc);
+          }
+        }
+      }
+
+      d3.select(self.frameElement).style("height", "600px");
+    });
+
+
+    function larger() {
+      charts.forEach(function(chart) {
+        chart.addToRadius(20);
+      });
+    }
+
+    function smaller() {
+      charts.forEach(function(chart) {
+        chart.addToRadius(-20);
+      });
+    }
+  </script>

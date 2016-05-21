@@ -1,0 +1,141 @@
+<script>
+			var height = $(window).height() * 0.75;
+			var width = $(window).width();
+
+			// Info on size of doctor icons
+			// So we can be a little dynamic
+			// These shouldn't be changed
+			// Unless the icon is changed
+			var icon_width_small = 25;
+			var padding_width = 5;
+			// Total width of icon plus padding
+			var width_padding_small = icon_width_small + padding_width;
+			var width_padding_large = (icon_width_small * 2) + padding_width;
+
+			var icon_height_small = 65;
+			var padding_top = 10;
+			// Total height of icon plus padding
+			var height_padding_small = icon_height_small + padding_top;
+			var height_padding_large = (icon_height_small * 2) + padding_top;
+
+			// Entire SVG
+			var svg = d3.select('svg');
+			
+			// Group for doctor icons
+			var doctors = svg.append("g")
+				.attr('class', 'doctors')
+				.attr('transform','translate(10,10)')
+
+			// Step keeps track of icons on the DOM
+			// Used when we're clicking
+			// These shouldn't be changed
+			var step = 0;
+			var total_step = 0;
+			var data = [];
+			var rows = 0;
+			
+			// How many icons per row
+			// Before we go to another row
+			var row_length = 4;
+			// Number of columns were breaking the icons into
+			var columns_length = 3;
+			
+			// In order for the clicks to work, we need the data array
+			// To be the same length as column_length
+			// Ex: If column_length is 3, data should be: [0,1,2]
+			for (var num = 0; num < columns_length; num ++ ) { 
+				data[num] = num;
+			}
+
+			// Duration, delay info
+			var duration_length = 500;
+			var delay_length = 100;
+
+			// The icon that is eventually transitioned
+			var doctor;
+
+  		// Add large icon to DOM
+  		function addIcon() {
+  			doctor = doctors.selectAll()
+	  			.data(data)
+	  			.enter()
+	  			.append("g")
+	  			.attr({
+	  				transform: function(d) {
+	  					return "translate(" + (width / 2 - (width_padding_large / 2)) + "," + (height_padding_small * 3) + ") scale(1)";
+	  				},
+	  				opacity: 0
+	  			})
+
+	  		// Grab svg path from defs and append to DOM
+	  		doctor.append("use")
+	  			.attr("xlink:href","#doctor")
+
+	  		doctor.transition()
+	  			.duration(duration_length - delay_length)
+	  			.attr({
+	  				opacity: 1
+	  			})
+  		}
+
+  		// Transition large doctor icon to smaller icon
+  		function transitionIcon() {
+	  		doctor.transition()
+	  			.delay(delay_length)
+	  			.duration(duration_length)
+	  			.ease("sin-in-out")
+	  			.attr({
+		  			transform: function(d) {
+		  				// We're placing the icons in three different columns
+		  				// This calcluates where the icons need to be placed within those column
+		  				// It divides the width of the SVG by three to get the three column positions
+		  				// Then multiplies it by the data value of the icon, which is either 0, 1 or 2
+		  				// This allows the icons to spread across the DOM
+		  				var columns = d * (width / columns_length + (row_length / 2 * width_padding_small) );
+
+		  				// The first icon in each row
+		  				if (step % row_length === 0) {
+		  					var translate_one = columns;
+		  				// To prevent the second, third, etc. icon from being placed on top of the first icon
+		  				// We add the width plus padding times the step to have the icons appear next to each other
+		  				} else {
+		  					var translate_one = columns + (width_padding_small * step)
+		  				}
+		  				
+		  				return "translate(" + translate_one + "," + (rows * height_padding_small) + ") scale(0.5)";
+		  			},
+		  		})
+			}
+
+			// Add another icon every click
+			function clickToAdd() {
+			  // Transition icon
+			  transitionIcon();
+
+			  // Every several icons we are going to create a new row
+			  // And place the icons on that row
+			  if (step > 0 && step % (row_length - 1) === 0) {
+			  	step = -1;
+			  	rows += 1;
+			  }
+
+			  // Keeps track of what icon we're on
+			  // So we can create new rows
+			  step += 1;
+			  total_step += 1;
+
+			  // Add another to DOM
+			  setTimeout(addIcon, duration_length + delay_length);
+
+			// Close icon add
+			};
+
+			// Add initial icon
+			addIcon();
+
+			// Click event
+			$('#click').click(function() {
+				clickToAdd();
+			})
+
+		</script>

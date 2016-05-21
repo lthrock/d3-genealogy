@@ -1,0 +1,71 @@
+<script>
+
+		var getIncrementedTimestamp = function(increment) {
+			return new Date(2015, 0, 1).getTime() + increment * 60000;
+		};
+
+		var lastRandom = {};
+
+		var getRandomValue = function(series) {
+			var options = {
+				min: 0,
+				max: 2,
+				integers: false
+			};
+
+			var randomize = function() {
+				if (lastRandom[series] === undefined || lastRandom[series] === null) {
+					lastRandom[series] = Math.random() * Math.abs(options.max - options.min) + options.min;
+					return lastRandom[series];
+				}
+				lastRandom[series] = Math.abs(lastRandom[series] + Math.random() - 0.5);
+				return lastRandom[series];
+			};
+
+			return options.integers ? Math.ceil(randomize()) : randomize();
+		};
+
+		var NUMBER_OF_TIMESERIES = 2;
+		var VALUES_PER_TIMESERIES = 60;
+
+		var data = [];
+
+		for (var series=0; series<NUMBER_OF_TIMESERIES; series++) {
+			data[series] = [];
+			for (var dp=0; dp<VALUES_PER_TIMESERIES; dp++) {
+				data[series][dp] = {
+					timestamp: getIncrementedTimestamp(dp),
+					value: getRandomValue(series)
+				};
+			}
+		}
+
+		var lineChart = new LineChart();
+		lineChart.draw(data);
+
+		var currentTS = data[0].length - 1;
+
+		window.setInterval(function() {
+
+			// remove old data point from start
+			if (data[0].length > VALUES_PER_TIMESERIES) {
+				data.forEach(function(d) {
+					d.shift();
+				});
+			}
+
+			// add new data point to end
+			data.forEach(function(d, i) {
+				d.push({
+					timestamp: getIncrementedTimestamp(currentTS + 1),
+					value: getRandomValue(i)
+				});
+			});
+			currentTS++;
+
+			// update line
+			lineChart.draw(data);
+
+		}, 1000);
+
+	</script>

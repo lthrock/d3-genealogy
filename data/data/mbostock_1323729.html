@@ -1,0 +1,7 @@
+<script>
+
+d3.selectAll("#list li")
+    .datum(function() { return this.dataset; })
+    .sort(function(a, b) { return d3.ascending(a.username, b.username); });
+
+</script>

@@ -1,0 +1,84 @@
+<script>
+            var height = 500;
+            var width = 960;
+            var timer, startTime;
+            var startTime;
+
+            function showTimeSince(startTime) {
+                var currentTime = new Date().getTime();
+                var runtime = currentTime - startTime;
+                document.getElementById('timeRendering').innerHTML = runtime + 'ms';
+                console.log(runtime + 'ms');
+            }
+
+            function startTimer() {
+                stopTimer();
+
+                startTime = new Date().getTime();
+
+                timer = setInterval(function() {
+                    showTimeSince(startTime);
+                }, 10);
+
+                showTimeSince(startTime);
+            }
+
+            function stopTimer() {
+                if (timer) {
+                    clearInterval(timer);
+                }
+
+                showTimeSince(startTime);
+            }
+
+            function drawCircles(svg, data) {
+                startTimer();
+                setTimeout(function() {
+                  	var circle = svg.append('circle')
+                    	.style('fill','black')
+                    	.style('r',3)
+                    	.remove()
+                    	.node();
+                  	var circleClone = function(){
+                      return circle.cloneNode(true);
+                    };                  
+                    var circles = svg.selectAll('circle').data(data);
+                    
+                    circles.exit().remove();
+                    circles = circles.enter()
+                      .append(circleClone)
+                    	.merge(circles);
+            				
+                  	var getX = function(d){return d.x};
+                  	var getY = function(d){return d.y};
+                    circles
+                      .attr('cx',getX)
+                      .attr('cy',getY);
+
+                    stopTimer();
+                }, 0);
+            }
+
+            function renderChart() {
+                var numPoints = parseInt(document.getElementsByName('numPoints')[0].value, 10);
+                if (isNaN(numPoints)) {
+                    return;
+                }
+
+                startTimer();
+                var data = [];
+                for (var i = 0; i < numPoints; i++) {
+                    data.push({
+                        x: Math.random() * width,
+                        y: Math.random() * height
+                    });
+                }
+
+                var svg = d3.select('body').selectAll('svg').data([0]);
+                svg = svg.enter().append('svg').merge(svg);
+              	svg.attr("height", height)
+                  	.attr("width", width);
+
+                drawCircles(svg, data);
+            }
+        </script>

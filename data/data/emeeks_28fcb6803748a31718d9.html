@@ -1,0 +1,197 @@
+<script>
+  
+  function rectangleMarker() {
+    d3.selectAll("g.marker").selectAll("*").remove();
+    d3.selectAll("g.marker").append("rect").attr("height", 10).attr("width", 10)
+    .attr("x", -5)
+    .attr("y", -5)
+    .style("fill", "yellow")
+    .style("stroke", "black")
+    .style("stroke-width", "1px")
+  }
+  
+  function circleMarker() {
+    d3.selectAll("g.marker").selectAll("*").remove();
+    d3.selectAll("g.marker").append("circle").attr("r", 5)
+    .style("fill", "blue")
+    .style("stroke", "black")
+    .style("stroke-width", "1px")
+  }
+  
+  function svgMarker() {
+    d3.selectAll("g.marker").selectAll("*").remove();
+    d3.html("icon_2330.svg", loadSVG);
+     function loadSVG(svgData) {
+    d3.select(svgData).selectAll("path").each(function(d) {
+      var that = this;
+        d3.selectAll("g.marker").each(
+          function() {
+          d3.select(this).node().appendChild(that.cloneNode(true));
+          }
+          )
+    })
+    d3.selectAll("g.marker").select("path");
+     }
+  }
+
+  function makeSomeMaps() {
+    pathSource = 0;
+
+    map = d3.carto.map();
+
+    d3.select("#map").call(map);
+    map.centerOn([-88,39],"latlong");
+    map.setScale(4);
+
+    map.refresh();
+
+    wcLayer = d3.carto.layer.tile();
+    wcLayer
+    .tileType("stamen")
+    .path("watercolor")
+    .label("Watercolor")
+    .visibility(true)
+
+    postLayer = d3.carto.layer.topojson();
+    postLayer
+    .path("uspost.topojson")
+    .label("Postal Routes")
+    .cssClass("roads")
+    .renderMode("svg")
+    .on("load", createMatrix);
+
+    map.addCartoLayer(wcLayer).addCartoLayer(postLayer);
+
+    function createMatrix() {
+      postdata = postLayer.features()
+      edgeList = [];
+      edgeMap = {};
+      nodes = [];
+      nodeHash = {};
+      for (x in postdata) {
+        var line = postdata[x].geometry.coordinates;
+        var lS = line[0];
+        var lE = line[line.length - 1];
+        var nA = [lS,lE];
+        for (y in nA) {
+        if (!nodeHash["node" + Math.ceil(nA[y][0] * 1000) + (nA[y][1] * 1000)]) {
+          var newNode = {label: "Node " + nodes.length, id: nodes.length.toString(), coordinates: [nA[y]], x: nA[y][0], y: nA[y][1]}
+          nodeHash["node" + Math.ceil(nA[y][0] * 1000) + (nA[y][1] * 1000)] = newNode;
+          nodes.push(newNode)
+        }
+        }
+        postdata[x].properties.source = nodeHash["node" + Math.ceil(lS[0] * 1000) + (lS[1] * 1000)];
+        postdata[x].properties.target = nodeHash["node" + Math.ceil(lE[0] * 1000) + (lE[1] * 1000)];
+        postdata[x].properties.cost = d3.geo.length(postdata[x]) * 6371;
+      }
+
+    nodeLayer = d3.carto.layer.xyArray();
+    nodeLayer
+    .features(nodes)
+    .label("Vertices")
+    .cssClass("node")
+    .renderMode("svg")
+    .x("x")
+    .y("y")
+    .markerSize(5)
+    .clickableFeatures(true)
+    .on("load", function() {nodeLayer.g().selectAll("g.marker").on("click", function(d) {flood(d.id)})});
+    map.addCartoLayer(nodeLayer);
+    
+    for (x in postdata) {
+      if (edgeMap[postdata[x].properties.source.id]) {
+        edgeMap[postdata[x].properties.source.id][postdata[x].properties.target.id] = postdata[x].properties.cost;
+      }
+      else {
+        edgeMap[postdata[x].properties.source.id] = {};
+        edgeMap[postdata[x].properties.source.id][postdata[x].properties.target.id] = postdata[x].properties.cost;
+      }
+      if (edgeMap[postdata[x].properties.target.id]) {
+        edgeMap[postdata[x].properties.target.id][postdata[x].properties.source.id] = postdata[x].properties.cost;
+      }
+      else {
+        edgeMap[postdata[x].properties.target.id] = {};
+        edgeMap[postdata[x].properties.target.id][postdata[x].properties.source.id] = postdata[x].properties.cost;
+      }
+    }
+
+      graph = new Graph(edgeMap);
+    }
+
+   function flood(siteID) {
+    siteDistance = d3.keys(graph.map).map(function(d) {return Infinity});
+    siteDistance[siteID] = 0;
+    
+    var map = graph.map;
+    var calculatedSites = [siteID];
+    var connectedSites = d3.keys(graph.map[siteID]);
+    var visitedSites = [siteID];
+    var sitesToVisit = [siteID];
+    var currentNode = siteID;
+    var currentCost = 0;
+
+    while (sitesToVisit.length > 0) {
+      sitesToVisit.splice(0,1);
+    for (x in connectedSites) {
+      if (calculatedSites.indexOf(connectedSites[x]) == -1) {
+          calculatedSites.push(connectedSites[x]);
+          siteDistance[connectedSites[x]] = currentCost + map[currentNode][connectedSites[x]];
+      }
+      else {
+          siteDistance[connectedSites[x]] = Math.min(currentCost + map[currentNode][connectedSites[x]], siteDistance[connectedSites[x]]);
+      }
+      
+      if (visitedSites.indexOf(connectedSites[x]) == -1 && sitesToVisit.indexOf(connectedSites[x]) == -1) {
+        sitesToVisit.push(connectedSites[x]);
+      }
+      }
+      visitedSites.push(currentNode)
+
+          //sort sitesToVisit
+          sitesToVisit = sitesToVisit.sort(function(a,b) {
+    if (siteDistance[a] < siteDistance[b])
+    return -1;
+    if (siteDistance[a] > siteDistance[b])
+    return 1;
+    return 0;
+    })
+      currentNode = sitesToVisit[0];
+      currentCost = siteDistance[currentNode];
+      connectedSites = d3.keys(graph.map[currentNode]);
+
+    }
+    
+    color = d3.scale.linear().domain([0,500,3500]).range(["green","yellow","red"])
+    nodeLayer.g().selectAll("g.marker").selectAll("*").style("fill", "lightgray")
+    .transition()
+    .delay(function(d) {return siteDistance[d.id] == Infinity ? 5000 : siteDistance[d.id] * 2})
+    .duration(1000)
+    .style("fill", function(d) {return siteDistance[d.id] == Infinity ? "gray" : color(siteDistance[d.id])})
+
+
+    }
+
+  }
+</script>
+<body onload="makeSomeMaps()">
+<div id="map">
+    <button style="left: 140px;" class="markerButton" onclick="rectangleMarker();">Rectangle Marker</button>
+  <button style="left: 250px;" class="markerButton" onclick="circleMarker();">Circle Marker</button>
+  <button style="left: 338px;" class="markerButton" onclick="svgMarker();">SVG Marker</button>
+</div>
+<footer>
+<script src="http://d3js.org/d3.v3.min.js" charset="utf-8" type="text/javascript"></script>
+<script src="http://d3js.org/topojson.v1.min.js" type="text/javascript">
+</script>
+<script src="http://d3js.org/d3.geo.projection.v0.min.js" type="text/javascript">
+</script>
+<script src="http://bl.ocks.org/emeeks/raw/f3105fda25ff785dc5ed/tile.js" type="text/javascript">
+</script>
+<script src="http://bl.ocks.org/emeeks/raw/f3105fda25ff785dc5ed/d3.quadtiles.js" type="text/javascript">
+</script>
+<script src="http://bl.ocks.org/emeeks/raw/f3105fda25ff785dc5ed/d3.geo.raster.js" type="text/javascript">
+</script>
+<script src="https://rawgit.com/emeeks/d3-carto-map/master/d3.carto.map.js" type="text/javascript">
+</script>
+<script src="dijkstra.js" type="text/javascript">
+</script>

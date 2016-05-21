@@ -1,0 +1,56 @@
+<script>
+	function reSortRoot(root,value_key) {
+		//console.log("Calling");
+		for (var key in root) {
+			if (key == "key") {
+				root.name = root.key;
+				delete root.key;
+			}
+			if (key == "values") {
+				root.children = [];
+				for (item in root.values) {
+					root.children.push(reSortRoot(root.values[item],value_key));
+				}
+				delete root.values;
+			}
+			if (key == value_key) {
+				root.value = parseFloat(root[value_key]);
+				delete root[value_key];
+			}
+		}
+		return root;
+	}
+
+	$( document ).ready(function() {
+		// You can comment out the whole csv section if you just have a JSON file.
+    // loadJSONFile('data/portaldata.json');
+
+    	d3.csv("UK_Home_Office_Air_Travel_Data_2011.csv", function(csv_data){
+
+			// Add, remove or change the key values to change the hierarchy. 
+      var nested_data = d3.nest()
+       				.key(function(d)  { return d.Destination; })
+       				.key(function(d)  { return d.Supplier_name; })
+              .key(function(d)  { return d.Ticket_class_description; })
+				      .entries(csv_data);
+			
+			// Creat the root node for the treemap
+			var root = {};
+			
+			// Add the data to the tree
+			root.key = "Data";
+			root.values = nested_data;
+		
+			// Change the key names and children values from .next and add values for a chosen column to define the size of the blocks
+			root = reSortRoot(root,"Paid_fare");
+			
+			// DEBUG
+// 			$("#rawdata").html(JSON.stringify(root));
+			
+			loadData(root);
+			
+		});
+
+
+	});
+</script>

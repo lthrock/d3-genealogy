@@ -1,0 +1,39 @@
+<script>
+		(function() {
+		  var svg = d3.select("body")
+			.append("svg")
+			.attr("width", 1300)
+			.attr("height", 400)
+			.style("background","gray");
+
+			d3.csv("grades-data.csv", function(dataset) {
+				console.log(dataset);
+				dataset.sort(function(a, b) {
+					return d3.descending(a.finalGrade, b.finalGrade);
+				});
+
+				var rects = svg.selectAll("rect")
+								.data(dataset)
+								.enter()
+								.append("rect");
+
+				rects.attr("x", 0)
+				.attr("y", function(d, i) {
+					return i*11;
+				})
+				.attr("width",function(d) {
+					return d.finalGrade;
+				})
+				.attr("height",10)
+				.attr("data-name", function(d) {
+					return d.firstName;
+				})
+				.append("title")
+				.text(function(d) {
+					return d.finalGrade;
+				})
+			});;
+		})();
+		</script>
+		
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>

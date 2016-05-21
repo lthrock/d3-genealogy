@@ -1,0 +1,66 @@
+<script>
+function makeSomeMaps() {
+    map = d3.carto.map();
+
+    d3.select("#map").call(map);
+
+    map.mode("projection")
+
+    csvLayer = d3.carto.layer.csv();
+    csvLayer
+    .type("csv")
+    .path("http://bl.ocks.org/emeeks/raw/c970c9ee3e242e90004b/sample_points.csv")
+    .label("CSV Points")
+    .cssClass("pinkcircle")
+    .renderMode("svg")
+    .markerSize(3)
+    .x(function(d) {return d.x})
+    .y(function(d) {return d.xy});
+
+    geojsonLayer = d3.carto.layer.geojson();
+    geojsonLayer
+    .path("http://bl.ocks.org/emeeks/raw/c970c9ee3e242e90004b/world.geojson")
+    .label("GeoJSON Countries")
+    .cssClass("countries")
+    .renderMode("canvas");
+    
+    topojsonLayer = d3.carto.layer.topojson();
+    topojsonLayer
+    .path("http://bl.ocks.org/emeeks/raw/c970c9ee3e242e90004b/sample_routes.topojson")
+    .label("TopoJSON Lines")
+    .cssClass("roads")
+    .renderMode("canvas");
+    
+    d3.select("#map").append("button").attr("class", "reproject").html("Reproject to Conic Equidistant").on("click", reproject);
+    
+    map.addCartoLayer(geojsonLayer).addCartoLayer(topojsonLayer).addCartoLayer(csvLayer)
+
+    function reproject() {
+
+    var projection = d3.geo.conicEquidistant()
+    .center([0, 15])
+    .scale(600)
+    .translate(map.zoom().translate())
+    .precision(.1);
+
+    map.projection(projection);
+    map.refresh();
+    }
+  }
+</script>
+<body onload="makeSomeMaps()">
+<div id="map"></div>
+<footer>
+<script src="http://d3js.org/d3.v3.min.js" charset="utf-8" type="text/javascript"></script>
+<script src="http://d3js.org/topojson.v1.min.js" type="text/javascript">
+</script>
+<script src="http://d3js.org/d3.geo.projection.v0.min.js" type="text/javascript">
+</script>
+<script src="http://bl.ocks.org/emeeks/raw/f3105fda25ff785dc5ed/tile.js" type="text/javascript">
+</script>
+<script src="http://bl.ocks.org/emeeks/raw/f3105fda25ff785dc5ed/d3.quadtiles.js" type="text/javascript">
+</script>
+<script src="http://bl.ocks.org/emeeks/raw/f3105fda25ff785dc5ed/d3.geo.raster.js" type="text/javascript">
+</script>
+<script src="https://rawgit.com/emeeks/d3-carto-map/master/d3.carto.map.js" type="text/javascript">
+</script>

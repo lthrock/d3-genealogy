@@ -1,0 +1,116 @@
+<script>
+
+meetup_data = {
+"results": [
+{
+"status": "upcoming",
+"visibility": "public",
+"maybe_rsvp_count": 0,
+"venue": {
+"zip": "93940",
+"phone": "831.372.0581",
+"lon": -121.889899,
+"state": "CA",
+"address_1": "256 Figueroa St",
+"address_2": "Wharf #2",
+"city": "Monterey",
+"country": "us",
+"id": 1106358,
+"repinned": false,
+"name": "London Bridge Pub",
+"lat": 36.601817
+},
+"id": "119518782",
+"utc_offset": -25200000,
+"time": 1371693600000,
+"waitlist_count": 0,
+"announced": true,
+"updated": 1371593066000,
+"yes_rsvp_count": 7,
+"created": 1368632764000,
+"event_url": "http://www.meetup.com/Monterey-Bay-Information-Technologists/events/119518782/",
+"description": "<p><strong>Announcements:</strong></p>
+<p>MBIT is still looking for sponsors to provide raffle prizes and possible future locations for MBIT meetups.</p>
+<p><strong>Presentations:</strong></p>
+<ul>
+<li>Introduction to Functional Programming with Clojure</li>
+<li>Data Visualization in the Browser with D3</li>
+</ul>
+<p><strong>Location</strong>:</p>
+<p>London Bridge Pub <br />
+
+ <span>256 Figueroa St. <br />
+
+</span> <span>Monterey, CA 93940</span><span> <br />
+
+</span> <a class="linkified" href="http://goo.gl/maps/lWJbJ" style="font-size : 14px ; text-decoration : underline">http://goo.gl/maps/lWJbJ</a></p>
+<p><strong>NOTE</strong>: Minors (under 21) are allowed in the pub until 10p so everyone is welcome.</p>
+<p><span>There should be a few MBIT people there about an hour (~6p) before the meetup for networking, discussions, and just overall relaxing.</span></p>
+<p>Also, we should have some time after the presentations and meetup proper to have more casual discussions as well.</p>
+<p><strong>Parking</strong>:</p>
+<p>There is parking next to the pub but I believe it might be paid parking.</p>
+<p> </p>",
+"name": "MBIT : June Meetup",
+"headcount": 0,
+"group": {
+"id": 8488122,
+"group_lat": 36.59000015258789,
+"name": "Monterey Bay Information Technologists (MBIT)",
+"group_lon": -121.8499984741211,
+"join_mode": "open",
+"urlname": "Monterey-Bay-Information-Technologists",
+"who": "MBitrs"
+}
+}
+],
+"meta": {
+"lon": "",
+"count": 1,
+"signed_url": "http://api.meetup.com/2/events?status=upcoming&order=time&limited_events=False&group_urlname=Monterey-Bay-Information-Technologists&desc=false&offset=0&format=json&page=20&fields=&sig_id=79162512&sig=7efb712148f3645653a29c8820aa904d647cd34b",
+"link": "http://www.meetup.com/2/events",
+"next": "",
+"total_count": 1,
+"url": "http://www.meetup.com/2/events?status=upcoming&order=time&limited_events=False&group_urlname=Monterey-Bay-Information-Technologists&desc=false&offset=0&format=json&page=20&fields=&sign=true",
+"id": "",
+"title": "Meetup Events v2",
+"updated": 1371593066000,
+"description": "Access Meetup events using a group, member, or event id. Events in private groups are available only to authenticated members of those groups. To search events by topic or location, see [Open Events](/meetup_api/docs/2/open_events).",
+"method": "Events",
+"lat": ""
+}
+}
+
+var width = 960,
+    height = 500;
+
+var projection = d3.geo.albersUsa()
+    .scale(1000)
+    .translate([width / 2, height / 2]);
+
+var path = d3.geo.path()
+    .projection(projection);
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+d3.json("/d/4090846/us.json", function(error, us) {
+  svg.insert("path", ".graticule")
+      .datum(topojson.feature(us, us.objects.land))
+      .attr("class", "land")
+      .attr("d", path);
+
+  svg.insert("path", ".graticule")
+      .datum(topojson.mesh(us, us.objects.counties, function(a, b) { return a !== b && !(a.id / 1000 ^ b.id / 1000); }))
+      .attr("class", "county-boundary")
+      .attr("d", path);
+
+  svg.insert("path", ".graticule")
+      .datum(topojson.mesh(us, us.objects.states, function(a, b) { return a !== b; }))
+      .attr("class", "state-boundary")
+      .attr("d", path);
+});
+
+d3.select(self.frameElement).style("height", height + "px");
+
+</script>

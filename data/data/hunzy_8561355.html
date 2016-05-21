@@ -1,0 +1,56 @@
+<script>
+$(function(){
+var dataset = [
+	{legend:"apple", value:100},
+	{legend:"orange", value:150},
+	{legend:"banana", value:200}
+];
+ 
+var w = 300;
+var h = 150;
+ 
+var xScale = d3.scale.linear()
+		.domain([0, d3.max(dataset.map(function(data){return data.value}))])
+		.range([0, w])
+ 
+var xAxis = d3.svg.axis()
+		.scale(xScale)
+		.orient("bottom")
+ 
+var svg = d3.select("body").append("svg")
+		.attr({
+			width: w,
+			height: h
+		})
+ 
+svg.selectAll("rect")
+	.data(dataset)
+	.enter()
+	.append("rect")
+	.attr({
+		x: 0,
+		y: function(d, i){ return i*30; },
+		width: function(d){ return d.value; },
+		height: 20,
+		fill: "green"
+	})
+ 
+svg.selectAll("text")
+	.data(dataset)
+	.enter()
+	.append("text")
+	.text(function(d){ return d.legend; })
+	.attr({
+		x: 0,
+		y: function(d, i){ return i*30+15; },
+		fill: "white",
+	})
+});
+
+svg.append("g")
+	.attr({
+		class: "axis",
+		transform: "translate(0, "+ (h-30) +")"
+	})
+	.call(xAxis);
+</script>

@@ -1,0 +1,27 @@
+<script>
+  var arr1 = ["a", "b", "c", "d", "e", "f", "z"];
+  var arr2 = ["z", "x", "a", "c", "f", "b"];
+  var tmp = d3.select(d3ArrayAdapter(arr1));
+  var join = tmp.selectAll("").data(arr2, function (d) { return d; });
+  join.enter().append("")
+      .each(function (d) {
+          console.log("enter:  " + d);
+      })
+  ;
+  join
+      .each(function (d) {
+          console.log("update:  " + d);
+      })
+  ;
+  join.exit()
+      .each(function (d) {
+          console.log("exit:  " + d);
+      }).remove()
+  ;
+  join.order();
+  
+  var p = d3.select("body").selectAll("p").data(arr1);
+  p.enter().append("p")
+    .text(function(d) {return d;})
+  ;
+</script>

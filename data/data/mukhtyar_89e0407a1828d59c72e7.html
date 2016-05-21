@@ -1,0 +1,29 @@
+<script>
+    
+    var svg = d3.select("body").append("svg");
+
+    								
+    var selection = svg.selectAll("rect")
+    	.data([{value: 30}, {value: 55}, {value: 34}]);
+
+    // enter
+    selection.enter()
+    	.append("rect")
+    		.attr("height", function(d){ return d.value; })
+    		.attr("x", function(d, i){ return (i * 100); })
+      	.attr({y: 100, width: 80})
+      	.style({ fill: "#a72d1a"});
+    
+    // exit
+    selection
+  		.exit()
+  		.remove();
+    
+    // update
+    selection
+    		.attr("height", function(d){ return d.value; })
+    		.attr("x", function(d, i){ return (i * 100); })
+      	.attr({y: 100, width: 80})
+      	.style({ fill: "#a72d1a"});
+    
+  </script>

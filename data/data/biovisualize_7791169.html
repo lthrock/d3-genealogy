@@ -1,0 +1,71 @@
+<script>
+
+// Bar chart view
+/////////////////////////////////////
+
+var BarChartView = Backbone.View.extend({
+	el: ".chart",
+	chart: null,
+	chartSelection: null,
+	initialize: function() {
+		_.bindAll(this, 'render', 'update');
+    	this.model.bind('change:data', this.render);
+    	this.model.bind('change:config', this.update);
+		chart = d3.custom.barChart();
+		chart.config(this.model.get('config'));
+		chart.on('customHover', function(d, i){ console.log('hover', d, i); });
+		this.render();
+	},
+	render: function() {
+		this.chartSelection = d3.select(this.el)
+		    .datum(this.model.get('data'))
+		    .call(chart);
+	},
+	update: function() {
+		this.chartSelection.call(chart.config(this.model.get('config')));
+	},
+});
+
+// Buttons view
+/////////////////////////////////////
+
+var ControlView = Backbone.View.extend({
+	el: ".control",
+	events: {
+		"click .update-data": "updateData",
+		"click .update-config": "updateConfig",
+	},
+	updateData: function() {
+		var that = this
+		var newData = d3.range(this._randomInt(10)).map(function(d, i){ return that._randomInt(100); });
+		this.model.set({data: newData});
+	},
+	updateConfig: function() {
+		var newConfig = {width: this._randomInt(600, 100)};
+		this.model.set({config: newConfig});
+	},
+	_randomInt: function(_maxSize, _minSize){ 
+		var minSize = _minSize || 1;
+		return ~~(Math.random() * (_maxSize - minSize)) + minSize; 
+	}
+});
+
+// Bar chart data
+/////////////////////////////////////
+
+var BarChartData = Backbone.Model.extend({
+	defaults: {
+		data: [1, 2, 3, 4],
+		config: {height: 200, width: 400}	
+    }
+});
+
+// Usage
+/////////////////////////////////////
+
+var barChartModel = new BarChartData();
+var controlView = new ControlView({model: barChartModel});
+var barChartView = new BarChartView({model: barChartModel})
+
+
+</script>

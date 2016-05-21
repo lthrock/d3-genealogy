@@ -1,0 +1,144 @@
+<script>
+'use strict';
+
+
+var header = d3.select("body").append("div").attr("class", "well");
+
+header.append("h3").text("Vaccine Record");
+
+var taskLabel = header.append("label")
+    .attr("id", "taskLabel")
+    .html("&nbsp;");
+
+var currTask = 0;
+var taskButton = header.append("button")
+    .attr("class", "btn btn-primary")
+    .style("margin-bottom", "20px")
+    .style("width", "100%")
+    .style("text-align", "left")
+    .text("Start")
+    .on("click", function() {
+      this.blur();
+      
+      tasks[currTask]();
+      
+     currTask = ++currTask % tasks.length;
+    })
+
+
+var tableDiv = d3.select("body").append("div").attr("id", "tableDiv1");
+
+
+var data;
+var initialData = [
+  { table: "At birth", rows: [
+      { table: "Hepatitis B #1", row: "Jan 1, 2016", data: "Jan 1,2016", status:"Administered" }
+    ]
+  },
+  { table: "Second Month", rows: [
+      { table: "DTAP #1", row: "March 8, 2016", data: "March8, 2016", status:"pending" },
+      { table: "PCV #1", row: "March8, 2016", data: "March8, 2016", status:"pending" },
+      { table: "IPV #1", row: "March8, 2016", data: "March8, 2016", status:"pending" }
+    ]
+  },
+  { table: "Fourth Month", rows: [
+      { table: "DTAP #2", row: "May 18, 2016", data: "May 18, 2016", status:"pending" },
+      { table: "PCV #2", row: "May 18, 2016", data: "May 18, 2016", status:"pending" },
+      { table: "IPV #2", row: "May 18, 2016", data: "May 18, 2016", status:"pending" }
+    ]
+  },
+  { table: "Sixth to Fifteenth Month", rows: [
+      { table: "DTAP #3", row: "July 18, 2016", data: "July 18, 2016", status:"pending" },
+      { table: "PCV #3", row: "July 18, 2016", data: "July 18, 2016", status:"pending" },
+      { table: "IPV #3", row: "July 18, 2016", data: "July 18, 2016", status:"pending" },
+      { table: "MMR #1", row: "July 18, 2016", data: "July 18, 2016", status:"pending" },
+      { table: "Varicella", row: "July 18, 2016", data: "July 18, 2016", status:"pending" },
+      { table: "PCV #4", row: "July 18, 2016", data: "July 18, 2016", status:"pending" }
+    ]
+  }
+]
+
+
+function task0() {
+  update([]);
+
+ 
+  taskButton.text("Vaccine Records");
+}
+
+function task1() {
+  data = JSON.parse(JSON.stringify(initialData));
+  update(data);
+
+  taskLabel.text("Name: Panace panacea ID: 1234 DOB: Jan 1, 2016  Age: 1 month");
+  taskButton.text("Back");
+}
+
+
+
+var tasks = [task0, task1,];
+
+
+
+  
+  
+  
+  
+function update(data) {
+
+ 
+  var divs = tableDiv.selectAll("div")
+      
+      .data(function(d) {
+        return data;
+      }, function(d) { 
+      return d.table 
+      })
+
+  
+  divs.exit().remove();
+
+ 
+  var divsEnter = divs.enter().append("div")
+      .attr("id", function(d) { return d.table + "Div"; })
+      .attr("class", "well")
+ 
+  divsEnter.append("h5").text(function(d) { return d.table; });
+
+  
+  var tableEnter = divsEnter.append("table")
+      .attr("id", function(d) { return d.table })
+      .attr("class", "table table-condensed table-striped table-bordered")
+
+  
+  tableEnter.append("thead")
+    .append("tr")
+      .selectAll("th")
+      .data(["VACCINE", "DUE DATE", "ADMINISTERED ON", "STATUS"])
+    .enter().append("th")
+      .text(function(d) { return d; })
+
+ 
+  tableEnter.append("tbody");
+
+ 
+  var tr = divs.select("table").select("tbody").selectAll("tr")
+      .data(function(d, i) { return d.rows; }, function(d) { return d.row }); // again we're using key function to disable by-index evaluation
+
+ 
+
+  
+  tr.enter().append("tr");
+
+  
+  var td = tr.selectAll("td")
+      .data(function(d, i) { return d3.values(d); });
+
+
+  td.enter().append("td");
+
+  
+  td.text(function(d) { return d; })
+};
+
+</script>

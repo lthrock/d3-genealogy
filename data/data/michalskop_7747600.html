@@ -1,0 +1,221 @@
+<script>
+	  // see http://leafletjs.com/reference.html
+	  //L_PREFER_CANVAS = true;
+	</script>
+
+	<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.css" />
+	 <!--[if lte IE 8]>
+		 <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.ie.css" />
+	 <![endif]-->
+    <script src="http://cdn.leafletjs.com/leaflet-0.6.4/leaflet.js"></script>
+    <script type="text/javascript" src="http://mbostock.github.com/d3/d3.js?1.29.1"></script>
+    <style type="text/css">
+
+		html, body, #map {
+		  width: 100%;
+		  height: 100%;
+		  margin: 0;
+		  padding: 0;
+		}
+		
+		/* somehow work in Chromium + Opera with this, but FF shows tooltips only without it */
+		/*svg {
+		  width: 10000px;
+		  height: 10000px;
+		}*/
+		
+		/* this is because of Bootstrap - very important! */
+		svg:not(:root) {
+			overflow: visible;
+		}
+
+		circle {
+		  fill: #888;
+		  fill-opacity: 0.01;
+		  /*stroke: #f00;*/
+		  stroke-opacity: 0.75;
+		  cursor:pointer;
+		}
+
+		.marian-kotleba {
+		  stroke: #040;
+		  color: #080;
+		  fill: #040;
+		}
+		.vladimir-manka {
+		  stroke: #f00;
+		  color: #f00;
+		  fill: #f00;
+		}
+		
+		div.tooltip 
+		{
+			position: absolute;
+			text-align: center;
+			width: 140px;
+			/*height: 6em;*/
+			padding: 8px;
+			font: 10px sans-serif;
+			background: #ffff99;
+			border: solid 1px #aaa;
+			border-radius: 8px;
+			pointer-events: none;
+		}
+
+
+    </style>
+  </head>
+  <body>
+  
+    <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+      <div class="container">
+        <div class="navbar-header">
+          <a class="navbar-brand" href="#">Regional elections 2013, Bansk Bystrica, Chairman - 2nd round - <span class="marian-kotleba">Kotleba</span> vs. <span class="vladimir-manka">Maka</span></a>
+        </div>
+      </div>
+    </div>
+    <div style="position:fixed;top:50px;z-index:1000;">
+      <div class="alert alert-info">The <strong>size</strong> of bubbles represents number of voters, the <strong>color</strong> represents the winner and the <strong>width of rings</strong> the margin of victory.</div>
+      <div class="alert alert-danger alert-dismissable">As of 2013-12-02: works ok on last <strong>Firefox</strong>, does not work on <strong>Opera</strong> and <strong>Chrome/Chromium</strong><br/>
+      2014-07-02: solution shown in map.html
+      </div>
+    </div>
+    <div id="map" style="margin-top:40px;"></div>
+    <script type="text/javascript">
+
+		// Create the map
+		var map = L.map('map',{zoomControl: false}).setView([48.565703,19.390411], 9);
+		map.addControl( L.control.zoom({position: 'topright'}) );
+		
+		// add an OpenStreetMap tile layer
+		// also see http://wiki.openstreetmap.org/wiki/Tiles
+		//L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+		L.tileLayer('http://{s}.www.toolserver.org/tiles/bw-mapnik/{z}/{x}/{y}.png', {
+			attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+		}).addTo(map);
+		
+		var svg = d3.select(map.getPanes().overlayPane).append("div").attr("class", "stations"),
+		    g = svg.append("g").attr("class", "leaflet-zoom-hide");
+
+		var radiusScale = d3.scale.sqrt().domain([0, 50000]).range([0, 100]);
+		
+		// Add tooltip div
+		var div = d3.select("body").append("div")
+		.attr("class", "tooltip")
+		.style("opacity", 1e-6);
+		
+		//add circles
+		//$.getJSON( "cz_president_2013_both_2_ring.json", function (data) {
+		d3.json( "sk_vuc_2013_2_ring_marian-kotleba_vladimir-manka.json", function (data) {
+		  nodes = data.features
+		    .map(function(d) {
+		      mpoint = projectPoint(d.coordinates[0],d.coordinates[1]);
+		      perc1 = Math.round(Math.max(parseInt(d.population.p6),parseInt(d.population.p9)) / (parseInt(d.population.p6)+parseInt(d.population.p9)) * 100);
+			  perc2 = 100 - perc1;
+		      return {
+		        x: mpoint.x,
+		        y: mpoint.y,
+		        r: (radiusScale(d.population.p6)+radiusScale(d.population.p9))/2* Math.pow(map.getZoom(),3) / 729,
+				r2: Math.abs(radiusScale(d.population.p9)-radiusScale(d.population.p6))* Math.pow(map.getZoom(),3) / 729,
+		        name: d.name,
+		        classname: d.classname,
+		        title: d.name + ': ' + d.winner + ' vyhral ' + perc1 + " % vs. " + perc2 + " % ("+ Math.max(d.population.p6,d.population.p9) + ':' + Math.min(d.population.p6,d.population.p9) + " hlasov)",
+		        value: d
+		      };
+		    });
+		  
+		  /*var circle = svg.selectAll("circle")
+		    .data(data);*/
+		    
+		  var node = svg.selectAll("svg")
+		    .data(nodes)
+		    .enter().append("svg:svg").append("svg:circle")
+		    	.attr("cx", function (d) {return d.x})
+		    	.attr("cy", function (d) {return d.y})
+		    	.attr("r", function (d) {return d.r})
+		    	.attr("stroke-width", function(d) {return d.r2})
+		    	.attr("class", function(d) {return d.classname})
+		  		//.attr("title", function(d) {return d.title})
+				.on("mouseover", mouseover)
+				.on("mousemove", function(d){mousemove(d);})
+				.on("mouseout", mouseout);
+		});
+		
+		function class2color(className) {
+		  if (className == 'marian-kotleba') return "#040";//"#f00";
+		  else return "#f00";//"#f0f";
+		}
+		
+		  // Use Leaflet to implement a D3 geometric transformation.
+		  function projectPoint(x, y) {
+			var point = map.latLngToLayerPoint(new L.LatLng(y, x));
+			return point;
+		  }
+		  
+		  
+		    function mouseover() {
+                div.transition()
+                .duration(300)
+                .style("opacity", 1);
+            }
+
+            function mousemove(d) {
+                div
+                .text(d.title)
+                .style("left", (d3.event.pageX ) + "px")
+                .style("top", (d3.event.pageY) + "px");
+            }
+
+            function mouseout() {
+                div.transition()
+                .duration(300)
+                .style("opacity", 1e-6);
+            }
+		
+		
+		map.on("zoomend", zoomit);
+		function zoomit() {
+				  /*d3.selectAll("circle").each(
+				    function(d,i) {
+				       $(this).attr(
+				         "r",d.value.population.p6/100/map.getZoom()
+				       );
+			  		}
+  		  		 )*/
+  		  		 d3.selectAll("circle").each(function(d,i) { 
+  		  		   mpoint = projectPoint(d.value.coordinates[0],d.value.coordinates[1]);
+  		  		   $(this)
+  		  		     .attr("r",
+  		  		       (radiusScale(d.value.population.p6)+radiusScale(d.value.population.p9))/2 * Math.pow(map.getZoom(),3) / 729	//power of 3 to show the results better in small scale
+  		  		      )
+  		  		      .attr("stroke-width",
+  		  		        Math.abs(radiusScale(d.value.population.p9)-radiusScale(d.value.population.p6)) * Math.pow(map.getZoom(),3) / 729	//power of 3 to show the results better in small scale
+  		  		      )
+  		  		      .attr("cx", mpoint.x)
+				      .attr("cy", mpoint.y);
+				      
+
+  		  		    })
+  		  	  }
+		
+		
+		//for further exploring:
+		/*map.on("viewreset", reset);
+		  reset();
+
+		  // Reposition the SVG to cover the features.
+		  function reset() {
+			var topLeft = [0,0],
+				bottomRight = [100000,100000];
+
+			svg .attr("width", bottomRight[0] - topLeft[0])
+				.attr("height", bottomRight[1] - topLeft[1])
+				.style("left", topLeft[0] + "px")
+				.style("top", topLeft[1] + "px");
+
+			g   .attr("transform", "translate(" + -topLeft[0] + "," + -topLeft[1] + ")");
+
+			//feature.attr("d", path);
+		  }*/
+	</script>

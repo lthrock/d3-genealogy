@@ -1,0 +1,48 @@
+<script>
+
+//Note that for this code to work well you need to have the two shapes have
+//the same number of nodes. I did the node number matching in R. Code mostly
+//taken from Mike Bostock http://bl.ocks.org/mbostock/3081153
+
+var width = 400,
+    height = 400;
+
+var projection = d3.geo.albers()
+ .rotate([120, 0])
+.center([25, 141])
+.scale(1500);
+    // .rotate([120, 0])
+    // .center([0, 37.7])
+    // .scale(2700);
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+d3.json("two_states.geojson", function(polygon) {
+
+  var coordinates0 = polygon.features[0].geometry.coordinates[0].map(projection);
+  var coordinates1 = polygon.features[1].geometry.coordinates[0].map(projection);
+  console.log(coordinates0);
+  var path = svg.append("path").style("fill", "#1a9ebf").style("stroke", "#127891");
+  var d0 = "M" + coordinates0.join("L") + "Z";
+  var d1 = "M" + coordinates1.join("L") + "Z";
+
+  loop();
+
+  function loop() {
+    path
+        .attr("d", d0)
+      .transition()
+        .duration(5000)
+        .attr("d", d1)
+      .transition()
+        .delay(5000)
+        .attr("d", d0)
+        .each("end", loop);
+  }
+});
+
+
+
+</script>

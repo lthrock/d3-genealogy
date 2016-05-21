@@ -1,0 +1,32 @@
+<script>
+
+d3.select(this)
+    .on("touchstart", animate)
+    .on("click", animate)
+    .on("load", animate);
+
+function animate() {
+  var delay = 0,
+      stroke = d3.selectAll(".stroke");
+
+  // First cancel any active or scheduled transitions.
+  stroke.interrupt().transition();
+
+  // Then schedule the new transition.
+  stroke.transition().each(function() {
+    var length = this.getTotalLength(),
+        duration = length * 10;
+
+    d3.select(this)
+        .style("display", null)
+        .style("stroke-dasharray", "0," + length)
+      .transition()
+        .delay(delay)
+        .duration(duration)
+        .style("stroke-dasharray", length + "," + length);
+
+    delay += duration;
+  });
+}
+
+</script>

@@ -1,0 +1,65 @@
+<script>
+      
+var G = (function(d3){
+
+   return {
+      init : function(){
+
+         this.ui = {};
+
+         var width = G.ui.width = 960;
+         var height = G.ui.height = 770;
+
+         var projection = this.ui.projection = d3.geo.mercator()
+         .scale((width + 1) / 2 / Math.PI)
+         .translate([width / 2, height / 2])
+         .precision(.1);
+
+         var path = this.ui.path = d3.geo.path()
+         .projection(projection);
+
+         queue()
+         .defer(d3.json, "http://bl.ocks.org/mbostock/raw/4090846/world-50m.json")
+         .await(this.ready);
+
+      },
+
+      ready : function(error, world, points, interactions) {
+
+         var path = G.ui.path;
+         var projection = G.ui.projection;
+         var width = G.ui.width;
+         var height = G.ui.height;
+
+         var svg = G.ui.svg = d3.select("#root").insert("svg", "#instructions")
+         .attr("id", "map")
+         .attr("width", width)
+         .attr("height", height);
+
+         var self = this;
+
+         var countries = topojson.feature(world, world.objects.countries).features;
+
+            // fixed it by changing your "return d" to "return indx" on line 87
+
+            // personally, i suggest looping through the dataset, and appending the property code = 1 to
+            // every element instead of what we've done below. when we use the second argument in d3,
+            // by convention, it's to dictate which key to bind the data to the document, and not to
+            // modify the dataset. by modifying the data *before* we bind it, it makes things clear
+            // for subsequent readers
+
+         svg.selectAll("path:not(.graticule)")
+         .data(countries, function(d, indx){
+            d.code = "1"; 
+            return indx;
+         })
+         .enter().append("path")
+         .attr("d", path);
+
+      }
+   }
+})(d3);
+
+G.init();
+      
+   </script>

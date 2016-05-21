@@ -1,0 +1,86 @@
+<script>
+  document.ready(renderStream)
+
+  function renderStream(){
+
+    // Update 0: Make width and height the whole page.
+    var width = $(document).width(),
+      height = $(document).height();
+
+    // Update 1: Get CSV data from BlockSpring API (vars.csv.data)
+    var csv = Block.vars.csv.data;
+
+    // Update 2: Get headers from BlockSpring API (vars.csv.columnRoleMap)
+    var streamHeightHeader = Block.vars.csv.columnRoleMap.streamHeight[0];
+    var seriesHeader = Block.vars.csv.columnRoleMap.series[0];
+
+    // Get unique list of series
+    var uniqueSeries = findUniqueSeries(csv);
+    var m = uniqueSeries.length; // number of series
+    
+    // Transform csv data
+    var data = transformCSV(csv, uniqueSeries);
+    var n = data[0].length; // number of values assuming each series has equal # of values.
+
+    // set scales for x and y positions, and area size.
+    var x = d3.scale.linear()
+        .domain([0, n - 1])
+        .range([0, width]);
+
+    var y = d3.scale.ordinal()
+        .domain(d3.range(m))
+        .rangePoints([0, height], 1);
+
+    var z = d3.scale.linear()
+        .domain(d3.extent(csv, function(d){ return d[streamHeightHeader]; }))
+        .range([0, height / (2*m)]);
+
+    // set scales for color.
+    var color = d3.scale.ordinal()
+        .range(["#98abc5", "#8a89a6", "#7b6888", "#6b486b", "#a05d56"]);
+
+    // instantiate area function.
+    var area = d3.svg.area()
+        .interpolate("basis")
+        .x(function(d, i) { return x(i); })
+        .y0(function(d) { return -z(d); })
+        .y1(function(d) { return z(d); });
+
+    // add svg to dom.
+    var svg = d3.select("#chart").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+    // add area plots to dom.
+    svg.selectAll("path")
+        .data(data)
+      .enter().append("path")
+        .attr("transform", function(d, i) { return "translate(0," + y(i) + ")"; })
+        .style("fill", function(d, i) { return color(i); })
+        .attr("d", area);
+
+    function findUniqueSeries(csv){
+        // Get a unique list of series.
+        var uniqueSeries = d3.set(csv.map(function(row){
+            return row[seriesHeader];
+        })).values();
+        
+        return uniqueSeries;
+    }
+
+    function transformCSV(csv, uniqueSeries){
+        // Transform csv data into array of arrays.
+        var dataObject = {};
+        
+        uniqueSeries.forEach(function(series){
+          dataObject[series] = [];
+        })
+
+        csv.forEach(function(row){
+          dataObject[row[seriesHeader]].push(row[streamHeightHeader]);
+        })
+
+        return d3.values(dataObject);
+    }
+  }
+</script>

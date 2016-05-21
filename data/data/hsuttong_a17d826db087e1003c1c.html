@@ -1,0 +1,45 @@
+<script>
+    var margin = {top: 14, right: 10, bottom: 20, left: 10};
+    var width = 960 - margin.left - margin.right;
+    var height = 505 - margin.top - margin.bottom;
+   
+    var svg = d3.select("body").append("svg")
+    	.attr("width", width + margin.left + margin.right)
+    	.attr("height", height + margin.top + margin.bottom)
+    	.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    var g = svg.append('g')
+    	.attr("transform", "translate(0, -4)");
+   
+    var data = [];
+   	d3.json("pics.json", function(error, d){
+      if (error) throw error;
+      
+    	data = d.data.children //tricky, narrow to the children arr b4 assignment
+      .sort(function(a,b) {
+      	return a.data.score - b.data.score
+    	});
+    });
+    
+    
+    var maxScore = d3.max(data, function(d){ return d.data.score })
+    var yScale = d3.scale.linear()
+    .domain([0, maxScore])
+    .range([0, 500])
+    
+      
+      
+   
+    //create our circle souls
+    d3.select('svg g').selectAll('circle')
+    .data(data)
+    .enter().append('circle')
+    	.attr({
+    		cx: function(d, i){ return (80 + i * 30) },
+        cy: function(d, i){ return yScale(d.data.score) },
+      	r: 7
+    	})
+    .on("mouseover", function(d){
+    	console.log("score: ", d.data.score);
+    });
+  </script>

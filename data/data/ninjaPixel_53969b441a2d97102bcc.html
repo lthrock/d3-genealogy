@@ -1,0 +1,12 @@
+<script>
+    var colors = d3.scale.category20b();
+    var svg = d3.select("body").append("svg");
+    for (i = 0; i < 20; i++) { 
+      	var thisColor = colors(i);
+
+        svg.append("rect")
+          .attr({x: 10, y: 10+(i*20), width: 82, height: 20})
+          .style({ fill: thisColor});
+    }
+
+  </script>

@@ -1,0 +1,26 @@
+<script>
+   
+  var chart = heatmap()
+  	.width(1200)
+  	.height(360)
+  	.x(function(d) { return d.dt; }) // dates
+    .y(function(d) { return +d.hour; }) // usually hours [1-24]
+    .z(function(d) { return +d.totrad; }) // value for coloring;
+	
+  d3.csv("weatherdata.csv", function(error, data){
+    
+    data.forEach(function(d){
+    	// create date for each data point
+    	// hours are all set to 0
+    	d.dt = new Date(+2015, +d.month-1, +d.day);
+    });
+
+    d3.select('#chart')
+    	.datum(data)
+    	.call(chart);
+
+  });
+ 
+// TODO: Add Brush
+// TODO: Add conditional statement
+</script>

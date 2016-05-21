@@ -1,0 +1,75 @@
+<script>
+		var dataset = ["linear", "quad", "cubic", "sin", "exp", "circle", "elastic", "back", "bounce"]
+			width = 960,
+			height = 500,
+			xPadding = 300,
+			yPadding = 30,
+			r = 20;
+
+		var svg = d3.select("body").append("svg")
+					.attr({
+						width: width,
+						height: height
+					});
+
+		svg.selectAll("text")
+			.data(dataset)
+			.enter()
+			.append("text")
+			.attr({
+				x: xPadding,
+				y: function(d, i){ return i * (height/dataset.length) + yPadding; },
+				dx: -100,
+				dy: 5,
+				"font-size": 18
+			})
+			.style("text-anchor", "middle")
+			.text(function(d){ return d; });
+
+		svg.selectAll("line")
+			.data(dataset)
+			.enter()
+			.append("line")
+			.attr({
+				x1: xPadding,
+				y1: function(d, i){ return i * (height/dataset.length) + yPadding; },
+				x2: width-xPadding,
+				y2: function(d, i){ return i * (height/dataset.length) + yPadding; },
+				stroke: "darkorange"
+			})
+
+		svg.selectAll("circle")
+			.data(dataset)
+			.enter()
+			.append("circle")
+			.attr("class", function(d){ return d; })
+			.attr({
+				cx: xPadding,
+				cy: function(d, i){ return i * (height/dataset.length) + yPadding; },
+				r: r,
+				fill: "orange"
+			})
+			.on("mouseover", function(d){
+				d3.select(this).attr("fill", "green");
+			})
+			.on("mouseout", function(d){
+				d3.select(this).attr("fill", "orange");
+			})
+			.on("click", function(d){
+				d3.select(this)
+					.transition()
+					.duration(1000)
+					.ease(d)
+					.attr("cx", width-xPadding)
+					.each("end", function(){
+						d3.select(this)
+							.transition()
+							.delay(500)
+							.duration(500)
+							.attr({
+								cx: xPadding
+							})
+					})
+			})
+
+	</script>

@@ -1,0 +1,156 @@
+<script>
+
+/**
+* Created with Wikiatlas.
+* User: hugolpz
+* version: 2015.01.21 */
+	
+/* ****************************************************** */
+/* MATH TOOLKIT ***************************************** */
+function parallel(, 0, 1) {
+  if (0 > 1) 1 += 360;
+  var d = 1 - 0,
+      step = d / Math.ceil(d);
+  return d3.range(0, 1 + 0.5 * step, step).map(function() { return [normalise(), ]; });
+}
+function normalise(x) {
+  return (x + 180) % 360 - 180;
+}
+/* ****************************************************** */
+/* LOCALISATOR FN *************************************** */
+var localisator = function (hookId,localisator_width, title, WNES0, WNES1, WNES2, WNES3) {
+/* Init ************************************************* */
+	var width  = 1*localisator_width,
+    	height = 1*localisator_width;
+	var lon_central = function(){ 
+		var num;
+		if(WNES2<WNES0){ num= -(WNES0+WNES2)/2+180; }
+		else{ num= -(WNES0+WNES2)/2; }
+		return num;
+	};
+
+	var proj = d3.geo.orthographic()
+    	.scale(1/2*localisator_width)
+    	.rotate([ lon_central(), -(WNES1+WNES3)/2 +10 ]); // orthographic + 10 to simulate real life globe watching.
+
+	var projection2 = proj
+		.translate([width / 2 , height / 2 ])
+		.clipAngle(90);
+
+	var path = d3.geo.path()
+		.projection(projection2);
+
+/* SVG container **************************************** */
+	var svg = d3.select(hookId).append("svg")
+		.attr("id", title+"-orthographic_globe_locator_(wikiatlas_2014)")
+		.attr("width", width)
+		.attr("height", height)
+		.call(d3.behavior.drag()
+		  .origin(function() { 
+			var rotate = projection2.rotate(); 
+			return {x: 2 * rotate[0], y: -2 * rotate[1]}; 
+		})
+		  .on("drag", function() {
+			projection2.rotate([d3.event.x / 2, -d3.event.y / 2, projection2.rotate()[2]]);
+			svg.selectAll("path").attr("d", path);
+		  }))
+		.on("dblclick", function() {
+			projection2.rotate([ lon_central(), -(WNES1+WNES3)/2 +10 ]);
+			svg.selectAll("path").attr("d", path);
+		});
+
+/* SVG background *************************************** */
+// Blue circle
+	svg.append("circle")
+		.attr("class", "water")
+		.attr("cx", width/2)
+		.attr("cy", height/2)
+		.attr("r", width/2 )
+		.style({'fill':'#C6ECFF'})
+		.style({'stroke': '656565', 'stroke-width': 1.5});
+	// Gradiant	settings
+	var gradient = svg.append("svg:defs")
+		.append("svg:linearGradient")
+		.attr("id", "gradient")
+		.attr("x1", "0%")
+		.attr("y1", "0%")
+		.attr("fx1", "30%")
+		.attr("fy1", "30%")
+		.attr("x2", "100%")
+		.attr("y2", "100%")
+		.attr("spreadMethod", "pad");
+	gradient.append("svg:stop") 		// middle step setting
+		.attr("offset", "50%")
+		.attr("stop-color", "#FFF")
+		.attr("stop-opacity", 0.3);
+	gradient.append("svg:stop") 		// final step setting
+		.attr("offset", "100%")
+		.attr("stop-color", "#009")
+		.attr("stop-opacity", 0.3);
+	// Gradiant-circle
+	var circle = svg.append('circle') 	// append gradient to circle
+		.attr('cx', width / 2)
+		.attr('cy', height / 2)
+		.attr('r', width/2 )
+		.attr('fill', 'url(#gradient)');
+	
+	
+/* ****************************************************** */
+/* GIS data injection *********************************** */
+d3.json("world-110m-ids.json", function(error, world) {
+	var country = svg.selectAll(".country")
+		.data(topojson.feature(world, world.objects.countries).features)
+	.enter().append("path")
+		.attr("id", function(d){ return d.id } )
+		.attr("class", "country")
+		.style("fill", "#FDFBEA")
+		.attr("d", path);
+	
+	var	focus = d3.selectAll("#"+title)
+			.style("fill", "#B10000"); 
+	
+	var boundaries = svg.append("path")
+        //.datum( topojson.mesh(world, world.objects.countries, function(a,b) { if (a!==b){var ret = b;}return ret;}))
+		.datum( topojson.mesh(world, world.objects.countries, function(a,b) { return a!==b; }))
+		.attr("class", "boundary")
+		.attr("d", path)
+		.style({'fill':'none','stroke': '#656565', 'stroke-width': 0.5});
+	
+	var graticule = svg.append("path")
+		.datum(d3.geo.graticule().step([20,20]))
+		.attr("class", "graticule")
+		.attr("d", path)
+		.style({'fill':'none', 'stroke':'#777', 'stroke-width': 0.5, 'stroke-opacity': 0.5});
+
+	var coast = svg.append("path")
+        //.datum( topojson.mesh(world, world.objects.countries, function(a,b) { if (a==b){var ret = b;}return ret;}))
+		.datum( topojson.mesh(world, world.objects.countries, function(a,b) { return a==b; }))
+        .attr("class", "Coast_border")
+		.style({'fill': 'none', 'stroke': '#0978AB', 'stroke-linejoin': 'round'})
+		.style({'stroke-width': 0.5 })
+		.attr("d", path);
+	
+	/* Red graniticule drawing
+	svg.append("path")
+		.attr("d", path(d3.geo.graticule()
+		.majorExtent([[WNES0, WNES3], [WNES2, WNES1]]).outline()))
+		.style({'fill': '#B10000', 'fill-opacity': 0.3, 'stroke': '#B10000', 'stroke-linejoin': 'round'})
+		.style({'stroke-width': 1 }); /**/
+	
+	//* Red polygon drawing
+	var redwindow = svg.append("path")
+		.datum({type: "Polygon", coordinates: [ //LineString
+			[[WNES0,WNES3]]
+			  .concat(parallel(WNES1, WNES0, WNES2))
+			  .concat(parallel(WNES3, WNES0, WNES2).reverse())
+			]})
+			.style({'fill': '#B10000', 'fill-opacity': 0.3, 'stroke': '#B10000', 'stroke-linejoin': 'round'})
+			.style({'stroke-width': 1 })
+			.attr("d", path); /**/
+});
+
+};
+
+var WNES = { "item":"India", "W": 67.0, "N":37.5, "E": 99.0, "S": 5.0 };
+localisator("body",500, WNES.item, WNES.W, WNES.N, WNES.E, WNES.S);
+</script>

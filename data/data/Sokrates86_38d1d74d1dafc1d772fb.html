@@ -1,0 +1,28 @@
+<script>
+ 
+var width = 960,
+    height = 700,
+ 
+svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height),
+
+scaleX = d3.scale.linear()
+        .domain([-30,30]) //Give appropriate range in the scale
+        .range([0,width]),
+
+scaleY = d3.scale.linear()
+        .domain([0,50]) //Give appropriate range in the scale
+        .range([height,0]);
+
+d3.json("polygons.json", function(data) {
+  svg.selectAll("polygon")
+    .data(data.Polygons)
+    .enter().append("polygon")
+    .attr("points",function(d) { 
+          return d.points.map(function(d) { return [scaleX(d.x),scaleY(d.y)].join(","); }).join(" ");})
+      .attr("stroke","black")
+      .attr("stroke-width",2); 
+});
+ 
+</script>

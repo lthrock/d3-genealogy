@@ -1,0 +1,223 @@
+<script>
+        //map data stored in gist fcb2c2306c2bf249b719
+/*
+our list of brazilian world cup cities
+grounds:   # add 12 stadiums/grounds
+- maracana            # Rio de Janeiro, RJ
+- nacionaldebrasilia  # Braslia, DF
+- corinthians         # So Paulo, SP
+- castelao            # Fortaleza, CE
+- mineirao            # Belo Horizonte, MG
+- fontenova           # Salvador, BA
+- pantanal            # Cuiab, MT
+- amazonia            # Manaus, AM
+- dasdunas            # Natal, RN
+- beirario            # Porto Alegre, RS
+- pernambuco          # Recife, PE
+- dabaixada           # Curitiba, PR
+
+from futbolDB
+OpenFutbol Github Org
+
+*/
+
+
+            var height = 475;
+            var width = 600;
+
+            var projection = d3.geo.albers()
+              .center([-54,-8.4])
+              .parallels( [11.5,-38])
+              .scale(550)
+              //rotating is long lat and around the origin
+              .rotate([55,-5,-5])
+              .translate([width/2 - 450,height/2 -40])
+
+              var graticule = d3.geo.graticule();
+
+            var svg = d3.select('body').append('svg').attr('width', width).attr('height', height);
+
+            var path = d3.geo.path()
+            .projection(projection);
+
+            svg.append('path')
+              .datum(graticule)
+              .attr('class', "grat")
+              .attr('d',path)
+              .attr('fill','none')
+              ;
+
+  //    d3.select('path')        .append('g')
+
+  var somewor = 'click on an icon';
+
+
+
+d3.json('/mpmckenna8/raw/fcb2c2306c2bf249b719/brazilWor.json', function(err, world){
+              if(err){console.log(err)}
+
+
+              svg.selectAll('path')
+                .data(topojson.feature(world,world.objects.countries110).features).enter().append('path')
+                .attr('d',path)
+                .on('hover',function(){
+              //   console.log(this)
+                //  return this.style('fill','purple');
+                })
+                .attr('class',function(d,i){
+              //    console.log(i + 'this is for the countries class');
+                  return 'coun'})
+
+
+
+
+d3.selectAll('.coun')
+.attr('class',function(d,i){
+//  console.log(i);
+// The country data doesn't have any properties so I used the index # for brazil since it's the only thing I was going to change.
+if(i===21){
+  return 'coun'
+}
+else{
+  return 'outside'
+}
+})
+  .on('click', function(d,i){
+    console.log(i);
+  })
+
+
+d3.json('amaR.geojson',function(err,river){
+
+  svg.append('path')
+//  .append('g')
+    .datum(river)
+    .attr('d',path)
+    .attr('class', function(d){
+      return 'rivs'
+    })
+
+
+    var citi = topojson.feature(world,world.objects.brazilCit).features
+
+    svg.selectAll('.shadows')
+      .data(citi)
+      .enter()
+      .append('circle')
+      .attr('d',path)
+      .attr('class', 'shadows')
+      .attr('r',4)
+      .attr('cx',2)
+      .attr('cy',2)
+      .attr("transform", function(d) { return "translate(" + projection(d.geometry.coordinates) + ")"; })
+      .attr('opacity',.3)
+      .attr('fill', '#fad959')
+    //console.log(citi)
+    //adding stuff all at once w/ datum like w/ graticule everthing it going to be the same.
+    // So the anonymous function in .attr('class',funct) is worthless more or less because it's all just one big thing.
+    svg.selectAll('.city')
+      .data(citi)
+      .enter()
+      .append('image')
+      .attr('d',path)
+      .attr('class',function(d){
+
+      //  console.log(d.properties.coun)
+        if(d.properties.coun ==="BRA"){
+
+        return 'city'
+      }
+      else{
+        return 'outer'
+
+      }
+      })
+      .attr('r', 1)
+      .attr("transform", function(d) { return "translate(" + projection(d.geometry.coordinates) + ")"; })
+
+
+    //this is where the river was
+
+
+
+    var bigCit = 0;
+
+    d3.selectAll('.city')
+    .filter(function(d,i){
+      console.log(d.properties)
+      var namer = d.properties.name;
+      return namer == 'Fortaleza' || namer == 'Brasilia'|| namer =='Rio de Janeiro'
+      || namer == 'Sao Paulo' || namer == 'Belo Horizonte' || namer == 'Salvador'
+      || namer == 'Cuiaba'  || namer == 'Manaus' ||  (namer == 'Natal' && d.properties.pop > 1000000)  || namer == 'Porto Alegre'
+      || namer == 'Recife' || namer == 'Curitiba'
+    })
+    .attr('xlink:href',function(d){
+
+      console.log(d.properties.name)
+      if (d.properties.name =='Rio de Janeiro'){return '/mpmckenna8/raw/b87df1c44243aa1575cb/icon_51440.svg'}
+      else{
+    return ('/mpmckenna8/raw/b87df1c44243aa1575cb/icon_10684.svg')}})
+
+    .attr('height', function(d){
+      return '19'
+    })
+    .attr('width', '29')
+
+    // while adding an image to an svg these are the coordinates i think of the top left
+    .attr('x', '-14.5')
+    .attr('y', '-9.5')
+    .on('click', function(d){
+      console.log(d.properties.name)
+      d3.selectAll('.texto')
+        .text(d.properties.name);
+
+
+    })
+    .attr('class', function(d){
+      if(d.properties.name == 'Rio de Janeiro'){
+        return 'chams'
+      }
+      else{
+      return 'pico'}
+    })
+
+
+d3.select('.chams')
+.attr('height',40)
+.attr('width', 40)
+.attr('y',-20)
+
+d3.selectAll('.outer')
+  .append('circle')
+  .attr('r',5)
+  .attr('cx',0)
+  .attr('cy',0)
+  .attr('fill','yellow')
+
+console.log(bigCit)
+
+
+})
+
+
+
+
+            })
+
+
+
+
+
+// console.log(projection([-54,-8.4]))
+
+d3.select('.keyer')
+.style('margin-left', '415px')
+.style('margin-top', '20px')
+
+.append('html')
+.html('<p>World Cup 2014</p><p>Brazil<img src=\'trophy.png\' class=\'troph\'/></p><p class=\'texto\'>'+somewor+'</p>')
+
+
+// to add the image in the html element <img src=\'./WCtrophy\/trophy.png\' />
+
+            </script>

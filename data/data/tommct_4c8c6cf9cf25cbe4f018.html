@@ -1,0 +1,166 @@
+<script>
+    var num_panels = 4;
+    var margin = {top: 10, right: 15, bottom: 10, left: 40};
+    var width = 900 - margin.left - margin.right;
+    var height = 500 - margin.top - margin.bottom;
+    var panel_proportions = [.2, .2, .2, .4];  // Should sum to 1
+    var panel_offs = [0];
+    var cumsum = 0;
+    for(var i=0; i<panel_proportions.length-1; i++) {
+        cumsum += panel_proportions[i];
+        panel_offs.push(cumsum);
+    }
+    var panel_bottom = [40, 40, 40, 40];
+    var panels = [];
+    var resolution = 5; // pixels per sample point
+
+    var svg = d3.select("body").append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom);
+
+    svg.append("defs").append("clipPath")
+            .attr("id", "clip")
+            .append("rect")
+            .attr("width", width)
+            .attr("height", height);
+
+    function brushed() {
+        var idx = parseInt(this.id.split("_")[1]);  // Name is "brush_<idx>".
+        var idxplusone = idx+1;
+        var newextent = panels[idx].brush.extent().map(Math.round);
+        d3.select(this).call(panels[idx].brush.extent(newextent));
+
+        while (idxplusone < num_panels) {
+            if (panels[idx].brush.empty()) {  // If this brush is empty, clear the following ones, too.
+                d3.select("#brush_" + idxplusone.toString()).call(panels[idxplusone].brush.clear())
+            }
+            newextent = panels[idxplusone-1].brush.extent();
+            windowdata(idxplusone, [newextent[0], newextent[1]+1]);
+            panels[idxplusone].pane.select(".area").attr("d", panels[idxplusone].area);
+            panels[idxplusone].pane.select(".x.axis").call(panels[idxplusone].xAxis);
+            d3.select("#brush_" + idxplusone.toString()).call(panels[idxplusone].brush);
+            idxplusone += 1;
+        }
+    }
+
+    function panel(idx) {
+        this.height = (height * panel_proportions[idx]) - panel_bottom[idx];
+        this.top = (panel_offs[idx] * height) + margin.top;
+        this.x = d3.scale.linear().range([0, width]).domain([0, 1]);
+        this.areax = d3.scale.linear().range([0, width]).domain([0, 1]);
+        var areax = this.areax;  // For use in lambdas below
+        this.y = d3.scale.linear().range([this.height, 0]);
+        var yy = this.y;
+        this.xAxis = d3.svg.axis().scale(this.x).orient("bottom");
+        this.yAxis = d3.svg.axis().scale(this.y).orient("left");
+        this.brush = d3.svg.brush()
+                .x(this.x)
+                .on("brush", brushed);
+        this.pane = svg.append("g")
+                .attr("class", "pane")
+                .attr("transform", "translate(" + margin.left + "," + this.top + ")");
+        this.area = d3.svg.area()
+//                .interpolate("monotone")
+                .x(function (d, i) {
+                    return areax(i);
+                })
+                .y0(this.height)
+                .y1(function (d, i) {
+                    return yy(d.val);
+                });
+        this.data = [];
+    }
+    for (var idx=0; idx<num_panels; idx++) {
+        panels.push(new panel(idx));
+    }
+
+    var data = [];
+    // Create an array of data that has a "val" key. For validating points, we just tag every so often,
+    // by the resolution grid. At the highest level or detail, a mark should be made at every resolution
+    // tick. Of course, "real" data would not be like this.
+    for (i=0; i<100000; i++) { data.push({val:((i%resolution)==0)*i*Math.random()});}
+
+    function cleararray(a) {
+        while(a.length > 0) {
+            a.pop();
+        }
+    }
+
+    /* Extent is inclusive on both sides. */
+    function windowdata(idx, extent) {
+        var range = extent[1] - extent[0];
+        var numpoints = Math.floor(width/resolution);
+        var panel = panels[idx];
+        var offset = 0;
+        var scale = 1;
+        var brushextent = panel.brush.extent();
+        if (brushextent[1] != 0) {  // If there's a brush associated with this panel, scale properly.
+            offset = panel.x.domain()[0] - extent[0];
+            scale = (panel.x.domain()[1]-panel.x.domain()[0])/(range-1);
+        }
+        panel.x.domain([extent[0], extent[1]-1]);
+
+        if ((offset != 0) || (scale != 1)) {
+            var left = d3.max([brushextent[0]-offset, extent[0]]);
+            var right = d3.min([brushextent[1]-offset, extent[1]]);
+            if (left > right) {
+                left = right = 0;
+            }
+            panel.brush.extent([left, right]);
+        }
+
+        cleararray(panel.data);
+        if ((idx > 0) && (panels[idx-1].brush.empty())) {
+            return;
+        }
+        if (range <= numpoints) {
+            data.slice(extent[0], extent[1]).forEach(function(d){panel.data.push(d);});
+            panel.areax.domain([0, panel.data.length-1]);
+            return;
+        }
+
+        var s = d3.scale.linear().domain([0, numpoints]).rangeRound([extent[0], extent[1]]);
+        for (var i=0; i<=numpoints; i++) {
+            temparray = data.slice(s(i), s(i+1));
+            if (temparray.length == 0) {
+                continue;
+            }
+            var elemval = d3.max(temparray, function(d) {return d.val;});
+            panel.data.push({val:elemval});
+        }
+        panel.areax.domain([0, panel.data.length-1]);
+    }
+
+    for (var idx=0; idx<num_panels; idx++) {
+        panels[idx].y.domain([d3.min(data.map(function(d) { return d.val; })),
+            d3.max(data.map(function(d) { return d.val; }))]);
+
+        windowdata(idx, [0, data.length]);
+
+        panels[idx].pane.append("path")
+                .datum(panels[idx].data)
+                .attr("class", "area")
+                .call(panels[idx].area)
+                .attr("d", panels[idx].area);
+
+        panels[idx].pane.append("g")
+                .attr("class", "x axis")
+                .attr("transform", "translate(0, " + panels[idx].height + ")")
+                .call(panels[idx].xAxis);
+
+        panels[idx].pane.append("g")
+                .attr("class", "y axis")
+                .call(panels[idx].yAxis);
+
+        if (idx < num_panels-1) {
+            panels[idx].pane.append("g")
+                    .attr("class", "x brush")
+                    .attr("id", "brush_" + idx.toString())
+                    .call(panels[idx].brush)
+                    .selectAll("rect")
+                    .attr("y", -6)
+                    .attr("height", panels[idx].height + 7);
+        }
+    }
+
+</script>

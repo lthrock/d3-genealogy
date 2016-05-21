@@ -1,0 +1,61 @@
+<script>
+    function makeSomeMaps() {
+
+    mapImageArray = [];
+    map = d3.carto.map();
+    d3.select("#map").call(map);
+
+    map.setScale(1)
+
+    countryLayer = d3.carto.layer.topojson();
+    
+    countryLayer.path("world.topojson")
+    .label("Countries")
+    .renderMode("canvas")
+    .cssClass("country");
+
+    csvLayer = d3.carto.layer.csv();
+    csvLayer
+    .path("all_sites.csv")
+    .label("CSV Points")
+    .cssClass("point")
+    .renderMode("canvas")
+    .markerSize(1)
+    .x("xcoord")
+    .y("ycoord")
+    .on("load", smallMaptiples)
+
+    map.addCartoLayer(countryLayer).addCartoLayer(csvLayer);
+    
+    function smallMaptiples() {
+    var cityAtts = ["aq", "ar", "arid", "capacity", "de", "delivery", "pop", "qu","region"];
+    var cityData = csvLayer.features()
+
+    for (var att in cityAtts) {
+      
+    var attExtent = d3.extent(cityData, function(d) {return parseFloat(d[cityAtts[att]])});
+    var colorScale = d3.scale.linear().domain([attExtent[0],(attExtent[0] + attExtent[1])/2,attExtent[1]]).range(["green","yellow","red"])
+
+    csvLayer
+    .markerColor(function(d) {return colorScale(d[cityAtts[att]])})
+    .strokeColor(function(d) {return colorScale(d[cityAtts[att]])})
+
+    map.refresh();
+    mapImageArray.push(d3.select("canvas").node().toDataURL());
+
+    }
+    
+    window.onresize(null);
+    d3.select("#map").remove();
+    d3.select("body").append("div").selectAll("img").data(mapImageArray).enter().append("img").attr("class", "smallmap").attr("src", function(d) {return d})
+    }
+  }
+</script>
+<body onload="makeSomeMaps()">
+<div id="map"></div>
+<footer>
+<script src="http://d3js.org/d3.v3.min.js" charset="utf-8" type="text/javascript"></script>
+<script src="https://rawgit.com/emeeks/d3-carto-map/master/d3.carto.map.js" type="text/javascript">
+</script>
+<script src="http://d3js.org/topojson.v1.min.js" type="text/javascript">
+</script>

@@ -1,0 +1,58 @@
+<script>
+    var data = [
+      {
+        name: 'Average Bears',
+        percentage: 65
+      },
+      {
+        name: 'Less Bears',
+        percentage: 15
+      },
+      {
+        name: 'Lotsa Bears',
+        percentage: 15
+      }
+   ]
+
+    var width  = 400,
+        height = width;
+
+    var chart = d3.select("#chart")
+      .append("svg")
+      .attr("width", width)
+      .attr("height", height)
+      .append("g")
+      .attr("transform", "translate(" + ((width/2)) + "," + ((height/2)) + ")");
+
+    var radius = Math.min(width, height) / 2;
+
+    var color = d3.scale.ordinal()
+      .range(["#ef5030", "#96ccab", "#1b374c"]);
+
+    var arc = d3.svg.arc()
+      .outerRadius(radius)
+      .innerRadius(radius - 100);
+
+    var pie = d3.layout.pie()
+      .sort(null)
+      .startAngle(2.5*Math.PI)
+      .endAngle(4.5*Math.PI)
+      .value(function(d) { return d.percentage; });
+
+    var g = chart.selectAll(".arc")
+      .data(pie(data))
+    	.enter().append("g")
+      .attr("class", "arc");
+
+    g.append("path")
+      .attr("fill", function(d, i) { return color(i); })
+      .transition()
+      .ease("exp-ease-in-out")
+      .duration(1500)
+      .attrTween("d", tweenPie);
+
+    function tweenPie(b) {
+      var i = d3.interpolate({startAngle: 4.5*Math.PI, endAngle: 4.5*Math.PI}, b);
+      return function(t) { return arc(i(t)); };
+    }
+  </script>

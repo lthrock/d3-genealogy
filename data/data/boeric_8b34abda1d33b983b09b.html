@@ -1,0 +1,271 @@
+<script>
+'use strict'; 
+
+var func;
+var keyFunc = null;
+var data;
+var idCounter = 0;
+
+// get reference to container
+var body = d3.select("body").append("div")
+    .attr("id", "container");
+
+body.append("h4").text("D3 Key Function Demo")
+
+// create UI elements
+var ctrlDiv = body.append("div")
+    .style("position", "relative");
+
+// add checkbox key function
+var useKeyFunction = false;
+ctrlDiv.append("label")
+    .attr("class", "checkbox")
+    .text("Use key function")
+  .append("input")
+    .attr("type", "checkbox")
+    .property("checked", useKeyFunction)
+    .on("click", function() {
+      useKeyFunction = d3.select(this).property("checked")
+    })
+
+// add checkbox for selection ordering
+var reOrderSelection = false;
+ctrlDiv.append("label")
+    .attr("class", "checkbox")
+    .text("Reorder DOM elements to match selection")
+  .append("input")
+    .attr("type", "checkbox")
+    .property("checked", reOrderSelection)
+    .on("click", function() {
+      reOrderSelection = d3.select(this).property("checked")
+      if (reOrderSelection && data != undefined) d3.selectAll(".testItem")
+        .data(data, keyFunc)
+        .order();
+    })
+
+// add button for code execution
+var btn = ctrlDiv.append("button")
+    .attr("class", "btn btn-small")
+    .style("width", "300px")
+    .text("Step 0: Create data")
+    .on("click", function() {
+      this.blur();
+      if (func != undefined) func();
+    })
+
+// add comment field
+var comment = ctrlDiv.append("label")
+    .html("&nbsp;");
+
+// add elem to hold current data structure
+var currData = ctrlDiv.append("pre")
+    .style("position", "absolute")
+    .style("width", "200px")
+    .style("top", "30px")
+    .style("left", "410px")
+    .style("display", "none")
+    .text("")
+
+// add elem to hold code to be executed
+var code = ctrlDiv.append("pre")
+    .style("position", "absolute")
+    .style("width", "600px")
+    .style("top", "570px")
+    .style("left", "10px")
+    .style("height", "200px")
+    .style("overflow", "scroll")
+    .text("")
+
+// create div to hold the dynamically created labels
+var div = body.append("div")
+    .style("margin-top", "30px")
+
+// introspect this code
+var source = d3.select("body").select("script").node().innerText;
+code.text(source);
+var lines = source.split("\n");
+var lineNumbers = [];
+lines.forEach(function(d, i) {
+  if (d.indexOf("function step") == 0 || d.indexOf("function start") == 0) 
+    lineNumbers.push({ func: d.substring(0, 14), lineNumber: i})
+})
+
+function scrollCode(codeSegment) {
+  var found;
+  lineNumbers.some(function(d) {
+    if (d.func.indexOf("function " + codeSegment) == 0) {
+      found = d;
+      return true;
+   }
+  })
+  var lineNumber = found.lineNumber
+  code.node().scrollTop = lineNumber * 11;
+}
+
+// master data
+var initialData = [
+  { item: 0, name: "zero", value: 0, initial: true },
+  { item: 1, name: "one", value: 1, initial: true },
+  { item: 2, name: "two", value: 2, initial: true },
+  { item: 3, name: "three", value: 3, initial: true },
+  { item: 4, name: "four", value: 4, initial: true }
+];
+
+// called from each step
+function processData(data) {
+
+  keyFunc = null;
+  if (useKeyFunction) keyFunc = function(d, i) { return d.item }
+
+  var updateSel = div.selectAll(".testItem")
+      .data(data, keyFunc)
+      
+  // process exit selection
+  updateSel.exit().remove();
+
+  // process enter selection; add items
+  updateSel.enter().append("label")
+      .attr("id", function(d) { return idCounter++} )
+      .attr("class", "testItem")
+      .style("color", function(d) {
+        if (d.initial) return "red";
+        else return "black";
+      })
+      .style("display", "block");
+
+  // process update election (which now includes the enter selection)
+  updateSel.text(function(d, i) { return d.name + " (" + d.value + ")"; });
+
+  // un-comment this to see the order of items in the selection
+  updateSel[0].forEach(function(d) {
+    //console.log(d3.select(d).attr("id"));
+  })
+
+  // optionally reorder DOM elements to match selection order
+  // only relevant if our key function is used
+  if (reOrderSelection) updateSel.order();
+}
+
+// set initial function pointer, and code scroll position
+func = step0;
+scrollCode("step0");
+
+function step0() {
+
+  // clear DOM
+  d3.selectAll(".testItem").remove();
+  comment.html("&nbsp;");
+
+  // clone data and reset counter
+  data = JSON.parse(JSON.stringify(initialData, null, 1));
+  //console.log('data.bla', data.bla())
+  idCounter = 0;
+
+  // update UI
+  currData.text(JSON.stringify(data, null, 1));
+  currData.style("display", "block");
+
+  // next
+  btn.text("Step 1: Load DOM...");
+  scrollCode("step1");
+  func = step1;
+}
+
+function step1() {
+
+  // inital data bind
+  processData(data);
+
+  // update UI
+  currData.text(JSON.stringify(data, null, 1));
+  comment.text(data.length + " items were added...");
+
+  // next
+  btn.text("Step 2: Remove 2nd item...");
+  scrollCode("step2");
+  func = step2;
+}
+
+function step2() {
+
+  // remove the 2nd item
+  data.splice(1, 1);
+  processData(data);
+
+  // update UI
+  currData.text(JSON.stringify(data, null, 1));
+  comment.text("The 2nd item was removed...");
+
+  // next
+  btn.text("Step 3: Move last item to 2nd position");
+  scrollCode("step3");
+  func = step3;
+}
+
+function step3() {
+
+  // move last item to 2nd position
+  var lastItem = data.pop();
+  lastItem.name = lastItem.name + "-modified";
+  lastItem.value = lastItem.value * 10;
+  data.splice(1, 0, lastItem);
+  processData(data);
+
+  // update UI
+  currData.text(JSON.stringify(data, null, 1));
+  comment.text("Was the new item moved to 2nd position?");
+
+  // next
+  btn.text("Step 4: Add three items to end of array...");
+  scrollCode("step4");
+  func = step4;
+}
+
+function step4() {
+
+  // add items
+  var initialLength = data.length;
+  data.push({ item: 4, name: "four", value: 400 });
+  data.push({ item: 5, name: "five", value: 500 });
+  data.push({ item: 6, name: "six", value: 600 });
+  var dataLength = data.length;
+  var itemsAdded = dataLength - initialLength;
+
+  processData(data);
+
+  // update UI
+  currData.text(JSON.stringify(data, null, 1));
+  var domLength = d3.selectAll(".testItem")[0].length;
+  var text = (domLength == dataLength) ? 
+    "All " + itemsAdded + " new items were added to DOM" : 
+    "Only " + (domLength - dataLength + itemsAdded) + " items were added to DOM!";
+  comment.text(text);
+
+  // next
+  btn.text("Step 5: Add one item at the beginning of array...");
+  scrollCode("step5");
+  func = step5;
+}
+
+function step5() {
+
+  data.unshift({ item: 7, name: "seven", value: 7 });
+  processData(data);
+
+  // update UI
+  currData.text(JSON.stringify(data, null, 1));
+  comment.text("Pay attention where the new item was added to the DOM");
+
+  // next
+  btn.text("Repeat Step 0: Create data")
+  scrollCode("step0");
+  func = step0;
+}
+
+
+
+
+
+
+
+</script>

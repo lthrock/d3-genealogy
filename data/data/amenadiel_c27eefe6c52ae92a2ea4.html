@@ -1,0 +1,65 @@
+<script>
+	var width = 900,
+  	height = 600,
+	globalOverlay = null,
+	map = null;
+	var url = 'illinois.json';
+
+	jQuery(document).ready(function() {
+		jQuery('#map-canvas').width(width);
+		jQuery('#map-canvas').height(height);
+	}); 
+	function initialize() {
+ 		map = new google.maps.Map(document.getElementById('map-canvas'), {
+			zoom: 9,
+			maxZoom:9,
+			minZoom:9,
+			center: {lat: 41, lng: -89.5}
+		});
+
+
+		map.data.loadGeoJson(url);
+
+		var featureStyle = {
+		    fillColor: 'transparent',
+		    strokeWeight: 2,
+		    strokeColor: 'red'
+		  };
+		  map.data.setStyle(featureStyle);
+			 
+			var projection=projection=d3.geo.mercator()
+				.scale(40.5 * Math.pow(2, map.getZoom()))
+				.translate([0,0]);
+
+			var path = d3.geo.path().projection(projection);
+	
+			var g_=  	d3.select('#thissvg')
+				.attr("width", 900)
+				.attr("height", 600)
+				.append("g")
+				.attr("class", "counties")
+				.attr("id","pathgroup");
+
+ 
+
+			function ready(error, us) {
+				console.log(us);
+			    g_.selectAll("path")
+				  .data(us.features)
+				.enter().append("path")
+				  .attr("d", path);
+
+				var centerPixel = projection([map.getCenter().lng(), map.getCenter().lat()]);
+				var translate = [(width / 2 - centerPixel[0]), (height / 2 - centerPixel[1])];
+				d3.select("#pathgroup").attr("transform", "translate(" + translate + ")scale(1)");
+ 			}
+
+				queue()
+				.defer(d3.json, url)
+				.await(ready);
+		 
+	}
+
+	google.maps.event.addDomListener(window, 'load', initialize);
+
+</script>

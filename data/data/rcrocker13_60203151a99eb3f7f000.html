@@ -1,0 +1,265 @@
+<script>
+	var w = 960,
+		h = 500,
+		padding = {top: 10, right: 10, bottom: 10, left: 50},
+		catSeven = ["#889072",
+			"#C0A69C",
+			"#655D4E",
+			"#B59575",
+			"#907D76",
+			"#93A198",
+			"#B8B693"];
+
+	var dataSet = [
+			{
+				country: "spain",
+				trades:[
+							{x: 1641, y: 2239},
+							{x: 1642, y: 889},
+							{x: 1643, y: 889},
+							{x: 1644, y: 889},
+							{x: 1645, y: 889},
+							{x: 1646, y: 889},
+							{x: 1647, y: 889}
+						]
+			},
+			{
+				country: "portugal",
+				trades: [
+							{x: 1641, y: 6239},
+							{x: 1642, y: 4000},
+							{x: 1643, y: 4325},
+							{x: 1644, y: 4179},
+							{x: 1645, y: 4581},
+							{x: 1646, y: 4000},
+							{x: 1647, y: 4617}
+						]
+			},
+			{
+				country: "great britian",
+				trades: [
+							{x: 1641, y: 949},
+							{x: 1642, y: 1722},
+							{x: 1643, y: 0},
+							{x: 1644, y: 5530},
+							{x: 1645, y: 6115},
+							{x: 1646, y: 9480},
+							{x: 1647, y: 5854}
+						]
+			},
+			{
+				country: "netherlands",
+				trades: [
+							{x: 1641, y: 1935},
+							{x: 1642, y: 3128},
+							{x: 1643, y: 6203},
+							{x: 1644, y: 6416},
+							{x: 1645, y: 4551},
+							{x: 1646, y: 1131},
+							{x: 1647, y: 7}
+						]
+			},
+			{
+				country: "usa",
+				trades: [
+							{x: 1641, y: 0},
+							{x: 1642, y: 0},
+							{x: 1643, y: 0},
+							{x: 1644, y: 0},
+							{x: 1645, y: 371},
+							{x: 1646, y: 0},
+							{x: 1647, y: 0}
+							]
+			},
+			{
+				country: "france",
+				trades: [
+							{x: 1641, y: 0},
+							{x: 1642, y: 0},
+							{x: 1643, y: 366},
+							{x: 1644, y: 566},
+							{x: 1645, y: 0},
+							{x: 1646, y: 628},
+							{x: 1647, y: 267}
+						]
+			},
+			{
+				country: "denmark baltics",
+				trades: [
+							{x: 1641, y: 150},
+							{x: 1642, y: 0},
+							{x: 1643, y: 0},
+							{x: 1644, y: 0},
+							{x: 1645, y: 0},
+							{x: 1646, y: 260},
+							{x: 1647, y: 643}
+						]
+			}
+		];
+
+	// Set up stack layout
+	var stack = d3.layout.stack()
+		.values(function(d) {
+			return d.trade;
+		});
+
+	// Set up scales
+	var xScale = d3.scale.linear()
+		.range([padding.left, w - padding.left]);
+
+	var yScale = d3.scale.linear()
+		.range([padding.top, h - padding.top - padding.bottom]);
+
+	var xAxis = d3.svg.axis()
+		.scale(xScale)
+		.orient("bottom")
+		.ticks(15);
+
+	var yAxis = d3.svg.axis()
+		.scale(yScale)
+		.orient("left")
+		.ticks(5);
+
+	// Create area generator
+	var area = d3.svg.area()
+		.x(function(d, i) {
+			return xScale(d.x);
+		})
+		.y0(function(d) {
+			return yScale(d.y0);
+		})
+		.y1(function(d) {
+			return yScale(d.y0 + d.y);
+		});
+
+	// Set colors to a IWantHue series
+	var	color = d3.scale.ordinal()
+		.domain([0,1,2,3,4,5,6])
+		.range(catSeven);
+
+	// Create svg element
+	var svg = d3.select("body")
+		.append("svg")
+		.attr("width", w)
+		.attr("height", h);
+
+	d3.csv("slavery.csv", function(data) {
+
+		var countries = [
+			{
+				country: "Denmark",
+				trade: []
+			},
+			{
+				country: "France",
+				trade: []
+			},
+			{
+				country: "Great Britian",
+				trade: []
+			},
+			{
+				country: "Netherlands",
+				trade: []
+			},
+			{
+				country:"Portugal",
+				trade: []
+			},
+			{
+				country: "Spain",
+				trade: []
+			},
+			{
+				country: "USA",
+				trade: []
+			}
+		];
+
+		var years = [];
+		for(var i = 1501; i < 1865; i++) {
+			years.push(i);
+		}
+
+		headers = ["great_britian", "france", "denmark_baltics", "usa", "netherlands", "protugal", "spain"];
+
+		for(var i = 0; i < countries.length; i++) {
+			for(var j = 0; j < data.length; j++) {
+				countries[i].trade.push(
+					{
+						x: +data[j].year,
+						y: +data[j][headers[i]]
+					});
+			}
+		}
+
+		// Remove NaN trades
+		countries.forEach(function(country) {
+			for( var trade in country.trade) {
+				if(isNaN(country.trade[trade].y)) {
+					country.trade[trade].y = 0;
+				}
+			}
+		});
+
+		stack(countries);
+
+		xScale.domain([ d3.min(years),d3.max(years) ]);
+
+		//Loop once for each year, and get the total trades
+		// that year
+		var totals = [];
+
+		for (i = 0; i < years.length; i++) {
+			totals[i] = 0;
+			for (j = 0; j < countries.length; j++) {
+				totals[i] += countries[j].trade[i].y;
+				// console.log(countries[j].trade[i]);
+			}
+		}
+
+		yScale.domain([ d3.max(totals), 0 ]);
+
+		// Make a path for each country
+		var paths = svg.selectAll("path")
+			.data(countries)
+			.enter()
+			.append("path")
+			.attr("class", "area")
+			.attr("d", function(d) {
+				return area(d.trade);
+			})
+			.attr("stroke", "none")
+			.attr("fill", function(d, i) {
+				return color(i);
+			});
+
+		// Add groups from each row of data
+		var groups = svg.selectAll("g")
+			.data(countries)
+			.enter()
+			.append("g")
+			.style("fill", function(d, i) {
+				return color(i);
+			});
+
+		// Append paths
+		paths.append("title")
+			.text(function(d) {
+				return d.country;
+			});
+
+		// Create axes
+		svg.append("g")
+			.attr("class", "x axis")
+			.attr("transform", "translate(0, " + (h - padding.bottom - padding.top) + ")")
+			.call(xAxis);
+
+		svg.append("g")
+			.attr("class", "y axis")
+			.attr("transform", "translate(" + padding.left + ",0)")
+			.call(yAxis);
+
+	});
+
+	</script>

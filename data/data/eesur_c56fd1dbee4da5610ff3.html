@@ -1,0 +1,131 @@
+<script>
+// some colour variables
+  var tcRed = "#EE3124";
+  var tcGreen = "#A4CD39";
+  var tcBlue = "#00B0DD";
+  var tcYellow = "#FDBB30";
+  var tcBlack = "#130C0E";
+
+// core varible will be using  
+  var w = 960, h = 500;
+  var x = 100, y = 150;
+  var r = 30, r2 =r*2 + 15;
+  var c = ",";
+  
+
+// need a random number for amount in the array
+  var randomCircleNum = Math.floor((Math.random()*4)+1);
+  var randomSquareNum = Math.floor((Math.random()*3)+1);
+  var randomTriangleNum = Math.floor((Math.random()*3)+1);
+  
+// data array values genertaed randomly
+  var dataCircle = [];
+	for (var i = 0; i < randomCircleNum; i++) {
+	    var newNumber = Math.floor((Math.random()*8)+1);
+	    dataCircle.push(newNumber);
+	}
+	
+	var dataSquare = [];
+	for (var i = 0; i < randomSquareNum; i++) {
+	    var newNumber = Math.floor((Math.random()*8)+1);
+	    dataSquare.push(newNumber);
+	}
+		
+	var dataTriangle = [];
+	for (var i = 0; i < randomTriangleNum; i++) {
+	    var newNumber = Math.floor((Math.random()*4)+1);
+	    dataTriangle.push(newNumber);
+	}
+  
+  // distance of lengths to start shapes (so they don't overlap)
+  var disCircleStart = dataTriangle.length * r2 + r;
+  var disSquareStart = disCircleStart + (dataCircle.length * r2 + 10);
+  var disShapesEnd = disSquareStart + (dataSquare.length * r2 -20);
+   
+  // the sum and numbers of the shapes
+  var triValue = dataTriangle[0] * dataTriangle.length; // just gonna take the first vlaue out the array (could have been any)
+  var squareVal = dataSquare[0] * dataSquare.length;
+  var circleVal = dataCircle[0] * dataCircle.length;
+  var sum = triValue + squareVal + circleVal; // adding the values together
+  
+  // svg canvas
+  var svgCanvas = d3.select("body").append("svg")
+                .attr("width", w)
+                .attr("height", h);
+                
+                
+  // var triangles = svgCanvas.selectAll()
+  var polygon = svgCanvas.selectAll("polygon")
+                .data(dataTriangle)
+                .enter()
+                .append("polygon");
+                
+  var polygonAttr = polygon
+                //.attr("points", "x1,y1, x2,y2, x3,y3");
+                .attr("points", function (d,i){
+                  return (i*r2 + r - 5) + c + (y + r2 - 20) + c +  // left x,y of tri note: c is just a comma ","
+                  ((i*r2 + r) + r) + c + y + c + // top x,y of tri
+                  (i*r2 + r2 + 15) + c + (y + r2 - 20); // right x,y of tri
+                })
+                .style("fill", tcRed);
+                
+  // the circles
+  var circles = svgCanvas.selectAll("circle")
+                .data(dataCircle)
+                .enter()
+                .append("circle");
+                
+  var circleAttr = circles
+                .attr("cx", function (d, i) {
+                  return disCircleStart + (i * r2 + r);
+                })
+                .attr("cy", y + r)
+                .attr("r", r)
+                .style("fill", tcGreen);
+                
+  // the sqaures
+  var squares = svgCanvas.selectAll("rect")
+                .data(dataSquare)
+                .enter()
+                .append("rect");
+                
+  var sqaureAttr = squares
+                .attr("x", function (d, i) {
+                  return i * r2 + disSquareStart; // this is to put after the circles
+                })
+                .attr("y", y + 3)
+                .attr("width", r2 - 20 )
+                .attr("height", r2 - 20 )
+                .style("fill", tcBlue);
+                
+                
+// add the total =
+svgCanvas.append("text")          
+    .style("fill", tcBlack)
+    .attr("x", x + disShapesEnd)
+    .attr("y", y)
+    .attr("dy", r+5)            // set offset y position
+    .attr("text-anchor", "middle")  // set anchor y justification
+    .text("the total = " + sum);
+    
+    
+// the text for the values
+svgCanvas.append("text")
+    .style("fill", tcBlack)
+    .attr("x", 5)
+    .attr("y", 50)
+    .text("A triangle = " + dataTriangle[0]  + ", and a square = " + dataSquare[0]  + ", so what is the value of a circle?");
+                
+  
+  </script>
+  
+  <script>
+  // some buttons for refresh and reveal the answer
+  function refreshPage() {
+      location.reload();
+  }
+  
+  function theAnswer() {
+    alert("the circle's value is: " + dataCircle[0]);
+  }
+  </script>

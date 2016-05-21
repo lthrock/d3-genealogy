@@ -1,0 +1,20 @@
+<script>
+      var data = ["JavaScript", "Document_Object_Model", "Ajax_(programming)"];
+
+      d3.select("body").append("svg")
+          .attr("width", 960)
+          .attr("height", 500)
+        .selectAll("a").data(data)
+          .enter()
+            .append("a")
+              .attr("xlink:href", function (d){
+                return "http://en.wikipedia.org/wiki/" + d;
+              })
+            .append("rect")
+              .attr("x", function (d, i){
+                return 140 + i * 240;
+              })
+              .attr("y", 150)
+              .attr("width", 200)
+              .attr("height", 200);
+    </script>

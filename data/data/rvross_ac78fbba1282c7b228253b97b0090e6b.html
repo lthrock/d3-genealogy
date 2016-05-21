@@ -1,0 +1,35 @@
+<script>
+    // fake data
+    var data = [ 10, 20, 30, 15, 25, 35, 40,
+                45, 50, 70, 100, 120, 130,
+               12, 18, 22, 29, 33, 44, 59, 200]
+    
+    var hscale = d3.scale.linear()
+      .domain([0, d3.max(data)])
+      .range([0,5])
+    
+    var scene = d3.select("a-scene");
+    
+    var cubes = scene.selectAll("a-cube.bar")
+      .data(data)
+    cubes.enter().append("a-cube").classed("bar", true)
+    cubes.attr({
+      position: function(d,i) {
+        var radius = 10;
+        var theta = (i/data.length) * (2 * Math.PI)
+        var x = radius * Math.cos(theta);
+        var y = hscale(d)/2;
+        var z = radius * Math.sin(theta);
+        return x + " " + y + " " + z
+      },
+      rotation: function(d,i) {
+        var x = 0;
+        var y = -360 * i/data.length;
+        var z = 0;
+        return x + " " + y + " " + z
+      },
+      height: function(d,i) {
+        return hscale(d)
+      }
+    })
+  </script>

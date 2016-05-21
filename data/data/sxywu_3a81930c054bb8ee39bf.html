@@ -1,0 +1,69 @@
+<script>
+      var startX = 100;
+      var data = [100, 200, 300, 400]; // ending x positions
+      var yPadding = 100;
+
+      var svg = d3.select('svg');
+      var circle;
+
+      var start = null;
+      var duration = 1000;
+      var interpolaters = [];
+
+      update();
+
+      // enter and exit circles based on the new set of data
+      function update() {
+        circle = svg.selectAll('circle')
+          .data(data);
+
+        circle.enter().append('circle');
+        circle.exit().remove('circle');
+
+        circle.attr('cx', startX)
+          .attr('cy', function(d, i) {
+            return (i + 1) * yPadding;
+          }).attr('r', 25)
+          .attr('fill', '#3FB8AF');
+      }
+
+      // every time user inputs new data
+      // update data array and then update circles
+      function input(e) {
+        data = e.target.value.split(',').map(function(value) {
+          return parseFloat(value) || 0;
+        });
+        d3.select('.result').text(JSON.stringify(data));
+        update();
+      }
+
+      // when user clicks play, reset the circles' x positions
+      // create interpolaters based on the data, and animate
+      function play() {
+        start = null;
+        circle.attr('cx', startX);
+
+        // create interpolaters for all the elements
+        interpolaters = data.map(function(endX) {
+          return d3.interpolate(startX, endX);
+        });
+        window.requestAnimationFrame(step);
+      }
+
+      // adapted from MDN example for requestAnimationFrame
+      // (https://developer.mozilla.org/en-US/docs/Web/API/window/requestAnimationFrame)
+      function step(timestamp) {
+        if (!start) start = timestamp;
+        var progress = timestamp - start;
+        // use calculated interpolaters to calculate cx at time t
+        // for each of the circles
+        var t = progress / duration;
+        circle.attr('cx', function(d, i) {
+          return interpolaters[i](t);
+        });
+
+        if (progress < duration) {
+          window.requestAnimationFrame(step);
+        }
+      }
+    </script>

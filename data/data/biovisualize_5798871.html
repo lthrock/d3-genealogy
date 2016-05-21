@@ -1,0 +1,81 @@
+<script>
+
+function pieChart() {
+  var width = 960,
+      height = 500,
+      radius = Math.min(width, height) / 2,
+      color = d3.scale.category20(),
+      accessor,
+      pie = d3.layout.pie(),
+      arc = d3.svg.arc(),
+      path;
+
+  function chart(selection) {
+    selection.each(function(data) {
+      
+      pie.value(accessor)
+        .sort(null);
+      arc.innerRadius(radius - 100)
+        .outerRadius(radius - 20);
+
+      var svg = d3.select(this).selectAll("svg").data([data]);
+
+      var gEnter = svg.enter().append("svg").append("g");
+
+      svg
+          .attr("width", width)
+          .attr("height", height)
+
+      var g = svg.select("g")
+          .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+      path = g.datum(data).selectAll("path")
+          .data(pie)
+        .enter().append("path")
+          .attr("fill", function(d, i) { return color(i); })
+          .attr("d", arc);
+
+    });
+  }
+
+  chart.change = function(d, i) {
+    pie.value(accessor); // change the value function
+    path = path.data(pie); // compute the new angles
+    path.attr("d", arc); // redraw the arcs
+  };
+
+  chart.accessor = function(_) {
+    if (!arguments.length) return accessor;
+    accessor = _;
+    return chart;
+  };
+
+  return chart;
+
+}
+
+d3.tsv("data.tsv", type, function(error, data) {
+  var myChart = pieChart()
+      .accessor(function(d) { return d.apples; });
+  
+  d3.select("#pie-chart")
+      .datum(data)
+      .call(myChart);
+
+  d3.selectAll("input")
+    .on("change", myChart.change);
+
+  var timeout = setTimeout(function() {
+    myChart.accessor(function(d) { return d.oranges; })
+    myChart.change();
+  }, 2000);
+
+});
+
+function type(d) {
+  d.apples = +d.apples;
+  d.oranges = +d.oranges;
+  return d;
+}
+
+</script>

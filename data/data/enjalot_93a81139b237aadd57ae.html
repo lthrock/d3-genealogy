@@ -1,0 +1,68 @@
+<script>
+    d3.json("api.json", function(err, api) {
+
+      var w = 960;
+      var h = 500;
+
+      
+      //counting functions under each API section
+      //this is not quite comprehensive because I arbitrarily removed some
+      //functions that would add clutter, and didn't include sub functions
+      var nested = d3.nest()
+      .key(function(d) { return d.type})
+      .rollup(function(d) { return d.length })
+      .map(api)
+      
+      var groups = Object.keys(nested);
+      
+      var color = d3.scale.category20c()
+      .domain(groups);
+      
+      var prepTypes = groups.map(function(t) {
+        return {
+          type: t,
+          children: [{value: nested[t]}]
+        }
+      })
+
+
+      var typeObj = {type:"API", children:prepTypes};
+
+      var treemap = d3.layout.treemap()
+      .size([w,h])
+      .sort(function(a,b) { return a.value - b.value })
+      .value(function(d) { return d.value })
+      var nodes = treemap.nodes(typeObj)
+
+      var svg = d3.select("svg");
+      var gs = svg.selectAll("g.cell")
+      .data(nodes)
+      .enter()
+      .append("g").classed("cell",true);
+      gs.append("rect")
+      .attr({
+        x: function(d) { return d.x },
+        y: function(d) { return d.y },
+        width: function(d) { return d.dx },
+        height: function(d) { return d.dy}
+      })
+      .style({
+        opacity: function(d) { return !!d.parent },
+        fill: function(d) { if(d.parent) return color(d.parent.type) }
+      })
+
+      svg.selectAll("text.cell")
+      .data(nodes).enter()
+      .append("text")
+      .text(function(d) { if(d.parent && d.parent.type != "API") return d.parent.type })
+      .attr({
+        x: function(d) { return d.x + 10 },
+        y: function(d) { return d.y - 10 },
+        transform: function(d) {
+          return "rotate(90," + [d.x, d.y]+")"
+        }
+      })
+
+    });
+
+  </script>

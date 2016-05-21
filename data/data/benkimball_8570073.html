@@ -1,0 +1,63 @@
+<script>
+
+var start_date = "2013-12-21T00:00:00Z",
+    end_date   = "2014-01-07T00:00:00Z",
+    iso        = d3.time.format.iso,
+    t1         = iso.parse(start_date),
+    t2         = iso.parse(end_date);
+
+var margin = {top: 0, right: 10, bottom: 20, left: 10},
+    width  = 600 - margin.left - margin.right,
+    height = 40 - margin.top - margin.bottom;
+
+
+var x = d3.time.scale()
+    .domain([t1, t2])
+    .range([0, width])
+
+var xAxisIrregular = d3.svg.axis()
+    .scale(x)
+
+var svg = d3.select(".irregular").append("svg")
+    .attr("class", "chart")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+svg.append('g')
+    .attr('class', 'x axis')
+    .call(xAxisIrregular)
+  .selectAll('text')
+    .attr('fill', function(d) { if(is_problematic(d)) { return "red"; } })
+
+/*****/
+
+var interval = d3.time.day;
+var LABEL_WIDTH = 40,
+    LABEL_FORMAT = d3.time.format('%b %_d');
+var max_label_ct = width / LABEL_WIDTH,
+    label_skip = Math.ceil(interval.range(t1, t2).length / max_label_ct);
+
+var xAxisRegular = d3.svg.axis()
+    .scale(x)
+    .tickValues(interval.range(t1, t2).filter(function(d, i) {
+      return !(i % label_skip); }))
+    .tickFormat(LABEL_FORMAT);
+
+var svg2 = d3.select('.regular').append('svg')
+    .attr("class", "chart")
+    .attr('width', width + margin.left + margin.right)
+    .attr('height', height + margin.top + margin.bottom)
+  .append('g')
+    .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+svg2.append('g')
+    .attr('class', 'x axis')
+    .call(xAxisRegular);
+
+
+function is_problematic(d) {
+  return ((d.getDate() == 31) || (d.getDate() == 1));
+}
+</script>

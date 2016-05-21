@@ -1,0 +1,25 @@
+<script>
+    
+        var csv_data="group, date, time\none, 2012-01-01, 4\none, 2012-01-01,6\ntwo, 2012-01-06,3\nthree, 2012-01-01, 4\nthree, 20120-01-05, 3\n";
+        
+        var array_data = d3.csv.parse(csv_data);
+        
+        var nested_data = d3.nest()
+            .key(function(d) { return d.group; })
+            .entries(array_data);
+            
+        console.debug(nested_data);
+        alert(JSON.stringify(nested_data));
+        
+        /* expect 
+        [{"key":"one",
+          "values":[{"group":"one"," date":" 2012-01-01"," time":" 4"},
+                    {"group":"one"," date":" 2012-01-01"," time":"6"}]},
+         {"key":"two",
+          "values":[{"group":"two"," date":" 2012-01-06"," time":"3"}]},
+         {"key":"three",
+          "values":[{"group":"three"," date":" 2012-01-01"," time":" 4"},
+                    {"group":"three"," date":" 20120-01-05"," time":" 3"}]}]
+        */
+            
+    </script>

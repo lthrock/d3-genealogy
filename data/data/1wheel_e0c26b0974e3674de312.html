@@ -1,0 +1,26 @@
+<script>
+
+var r = 15,
+    width  = 960 - r*2,
+    height = 500 - r*2
+
+var svg = d3.select("body").append("svg")
+    .attr("width",  width  + r*2)
+    .attr("height", height + r*2)
+  .append('g')
+    .translate([r, r])
+
+
+function drawCicle(pos){
+  svg.append('circle')
+      .attr('r', r)
+      .datum([Math.random()*width, Math.random()*height])
+      .translate(pos)
+      .on('mouseover', drawCicle)
+    .transition()
+      .translate(function(d){ return d })
+}
+
+drawCicle([width/2, height/2])
+
+</script>

@@ -1,0 +1,53 @@
+<script>
+
+//create some data
+var data = [20,10,50,40,15];
+
+// create a svg object to add the elements to
+var svg = d3.select("#chart").append("svg")
+    .attr("width", 900)
+    .attr("height", 500);
+
+// select all the circles (there are none at the beginning)
+svg.selectAll("circle")
+	.data(data) //load the data 
+	.enter() //for each data where there's no circle, enter a new circle
+	.append("circle")
+	.attr("cx", function(d) {return d * 10;} ) // set its X position on the svg to 10 times its value
+	.attr("cy", 50) // set its Y postion to be 50 pixels down from the top
+	.attr("r", function(d) {return d;} ) // set its radius based on its value
+	.style("opacity", 0.6); // set it to be slightly transparent
+	
+// print the array of data to the console
+console.log(data);	
+	
+// example of adding data
+
+// add a on click listen to all <p> items in the DOM
+d3.select("p").on("click", function() {
+
+	// make a random number each time the paragraph is clicked, and add to the array of data
+	var maxValue = 50;
+	var newNumber = Math.floor(Math.random() * maxValue);
+	data.push(newNumber);
+
+	// select the circles and upload the data array. This will return an array of the elements with new values, and store it in the var circles
+	var circles = svg.selectAll("circle")
+		.data(data);
+	
+	//using the circles var, we enter the new elements as circles onto the svg, as before, except we set them to be totally transparent
+	circles
+		.enter()
+		.append("circle")
+		.attr("cx", function(d) {return d * 10;} )
+		.attr("cy", 100)
+		.attr("r", function(d) {return d;} )
+		.style("opacity", 0);
+		
+	//we then transition the opacity to .6 so they are visible
+	circles.transition().duration(1000).style("opacity", 0.6);
+		
+	console.log(data);
+});
+
+</script>

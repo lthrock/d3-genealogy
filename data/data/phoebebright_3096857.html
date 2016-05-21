@@ -1,0 +1,15 @@
+<script>
+    
+         d3.csv("./nest2.csv", function(csv_data){
+                    
+            var nested_data = d3.nest()
+                .key(function(d) { return d.region; })
+                .key(function(d) { return d.country; })
+                .entries(csv_data);
+                
+            console.debug(nested_data);
+            alert(JSON.stringify(nested_data));
+     
+        });
+        
+    </script>

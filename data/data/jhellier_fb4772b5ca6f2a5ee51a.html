@@ -1,0 +1,27 @@
+<script>
+    var margin = {top: 20, right: 10, bottom: 20, left: 10};
+    var width = 960 - margin.left - margin.right;
+    var height = 500 - margin.top - margin.bottom;
+    var svg = d3.select("body").append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+d3.xml("RectAnno3.xml","image/svg+xml", function(xml) {
+  
+  var anno = svg.selectAll("anno")
+  		.data("1")
+  		.enter()
+  		.append("g")
+  		.attr("class","anno")
+  		.attr("transform", function(d,i) {
+  			return "scale(0.5)";
+  		})
+
+  var importedNode = document.importNode(xml.documentElement, true);
+  
+  d3.select(".anno")[0][0].appendChild(importedNode.cloneNode(true));
+  
+});
+  </script>

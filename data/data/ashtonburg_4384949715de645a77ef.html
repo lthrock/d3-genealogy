@@ -1,0 +1,26 @@
+<script>
+ 
+var margin = {top: 100, right: 100, bottom: 100, left: 100},
+    width = 960 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+ 
+var x = d3.scale.linear()
+    .domain([0, 1000])
+    .range([0, width]);
+ 
+var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+ 
+svg.append("g")
+    .attr("class", "x axis")
+    .call(d3.svg.axis().scale(x).orient("bottom").ticks(5).tickSubdivide(1).tickSize(-60, -20, 0));
+  
+  svg.append("g")
+    .attr("class", "x axis")
+    .call(d3.svg.axis().scale(x).orient("top").ticks(5).tickSubdivide(10).tickSize(-60, -30, 0));
+  
+
+</script>

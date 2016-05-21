@@ -45,8 +45,8 @@ def main(argv):
       simple_e["description"] = e["description"]
       output_json.append(simple_e)
     
-    print output_json
-
+    
+  print len(output_json)
   with open('data.json', 'w') as datafile:
     json.dump(output_json, datafile)
     

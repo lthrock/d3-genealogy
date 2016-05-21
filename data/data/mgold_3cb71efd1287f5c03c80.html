@@ -1,0 +1,86 @@
+<script>
+            var html_height = 125,
+                margin = {top: 20, right: 20, bottom: 35, left: 50},
+                width = 960 - margin.left - margin.right,
+                height = 800 - margin.top - margin.bottom - html_height;
+
+            var x = d3.scale.linear()
+                .range([0, width]);
+
+            var y = d3.scale.linear()
+                .range([height, 0]);
+
+            var r = d3.scale.sqrt()
+                .range([0, 16]);
+
+            var xAxis = d3.svg.axis()
+                .scale(x)
+                .orient("bottom")
+                .tickFormat(function(d){ return d + "%"; });
+
+            var yAxis = d3.svg.axis()
+                .scale(y)
+                .orient("left")
+                .tickFormat(function(d){ return d + "%"; });
+
+            d3.csv("no-ceilings-data.csv", function(row){
+                //accessor to convert to numbers
+                var obj = {}
+                Object.keys(row).forEach(function(k){
+                    var v = row[k]
+                    obj[k] = +v || v;
+                })
+                // wiap = women internet access percentage
+                obj.wiap = obj.internet_users_per_100 * obj.internet_users_percent_female / 100;
+                return obj
+            }, function(err, data){
+                if (err) return console.error(err);
+                data = data.filter(function(d){return d.population > 5})
+                    .sort(function(a,b){return d3.descending(a.wiap, b.wiap)})
+
+                x.domain(d3.extent(data, function(d){return d.female_hs_enrollment}))
+                y.domain([0, d3.max(data, function(d){return d.teen_pregnancy})])
+                r.domain([0, d3.max(data, function(d){return d.wiap})])
+
+                var svg = d3.select("svg")
+                    .attr("width", margin.left + width + margin.right)
+                    .attr("height", margin.top + height + margin.bottom)
+                  .append("g")
+                    .attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+
+                svg.append("g")
+                    .attr("class", "x axis")
+                    .attr("transform", "translate(0," + height + ")")
+                    .call(xAxis);
+                svg.append("g")
+                    .attr("transform", "rotate(270)")
+                  .append("text")
+                    .attr("x", -height/2)
+                    .attr("y", -30)
+                    .attr("class", "centered axis")
+                    .text("Teen pregnancy rate")
+
+                svg.append("g")
+                    .attr("class", "y axis")
+                    .call(yAxis)
+                svg.append("text")
+                    .attr("x", width/2)
+                    .attr("y", height+30)
+                    .attr("class", "centered axis")
+                    .text("Percent of girls who attend high school")
+
+                svg.selectAll("circle")
+                   .data(data)
+                   .enter()
+                   .append("circle")
+                   .attr("cx", function(d){return x(d.female_hs_enrollment)})
+                   .attr("cy", function(d){return y(d.teen_pregnancy)})
+                   .attr("r", function(d){return r(d.wiap)})
+                 .append("title")
+                 .text(function(d){
+                     return d.country + " has a teen pregnancy rate of " + d3.round(d.teen_pregnancy, 2) + "% and " +
+                     d3.round(d.female_hs_enrollment, 2) + "% of girls attend high school. " +
+                     d3.round(d.wiap, 2) + "% of women are internet users."
+                 })
+            })
+        </script>

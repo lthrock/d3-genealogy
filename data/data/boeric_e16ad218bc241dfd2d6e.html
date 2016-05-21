@@ -1,0 +1,198 @@
+<script>
+'use strict';
+
+// title div with label and button
+var header = d3.select("body").append("div").attr("class", "well");
+
+header.append("h3").text("Dynamic D3 Array of Tables Demo");
+
+var taskLabel = header.append("label")
+    .attr("id", "taskLabel")
+    .html("&nbsp;");
+
+var currTask = 0;
+var taskButton = header.append("button")
+    .attr("class", "btn btn-primary")
+    .style("margin-bottom", "20px")
+    .style("width", "100%")
+    .style("text-align", "left")
+    .text("Start")
+    .on("click", function() {
+      this.blur();
+      // execute the task
+      tasks[currTask]();
+      // next task
+      currTask = ++currTask % tasks.length;
+    })
+
+// container for array of tables
+var tableDiv = d3.select("body").append("div").attr("id", "tableDiv1");
+
+// initial data
+var data;
+var initialData = [
+  { table: "Table1", rows: [
+      { table: "Table1", row: "Row1", data: "DataT1R1" },
+      { table: "Table1", row: "Row2", data: "DataT1R2" }
+    ]
+  },
+  { table: "Table2", rows: [
+      { table: "Table2", row: "Row1", data: "DataT2R1" },
+      { table: "Table2", row: "Row2", data: "DataT2R2" },
+      { table: "Table2", row: "Row3", data: "DataT2R3" }
+    ]
+  },
+  { table: "Table3", rows: [
+      { table: "Table3", row: "Row1", data: "DataT3R1" },
+      { table: "Table3", row: "Row2", data: "DataT3R2" }
+    ]
+  },
+  { table: "Table4", rows: [
+      { table: "Table4", row: "Row1", data: "DataT4R1" },
+      { table: "Table4", row: "Row2", data: "DataT4R2" }
+    ]
+  }
+]
+
+// tasks
+function task0() {
+  // clear any existing tables (by providing an empty array)
+  update([]);
+
+  taskLabel.html("Cleared any existing tables");
+  taskButton.text("Next step: Initial load of tables");
+}
+
+function task1() {
+  // load initial tables
+  data = JSON.parse(JSON.stringify(initialData));
+  update(data);
+
+  taskLabel.text("Step 1: Initial tables loaded");
+  taskButton.text("Next step: Add 4th row to Table 2");
+}
+
+function task2() {
+  // add 4th row to table 2
+  data[1].rows.push({ table: "Table2", row: "Row4", data: "DataT2R4" });
+  update(data);
+
+  taskLabel.text("Step 2: Added 4th row to Table 2");
+  taskButton.text("Next step: Delete first row of Table 3");
+}
+
+function task3() {
+  // delete first row of table 3
+  data[2].rows.shift();
+  update(data);
+
+  taskLabel.text("Step 3: Deleted first row of Table 3");
+  taskButton.text("Next step: Add Table 5 with 8 rows");
+}
+
+function task4() {
+  // add table 5 with 8 rows
+  data.push(  
+    { table: "Table5", rows: [
+        { table: "Table5", row: "Row1", data: "DataT5R1" },
+        { table: "Table5", row: "Row2", data: "DataT5R2" },
+        { table: "Table5", row: "Row3", data: "DataT5R3" },
+        { table: "Table5", row: "Row4", data: "DataT5R4" },
+        { table: "Table5", row: "Row5", data: "DataT5R5" },
+        { table: "Table5", row: "Row6", data: "DataT5R6" },
+        { table: "Table5", row: "Row7", data: "DataT5R7" },
+        { table: "Table5", row: "Row8", data: "DataT5R8" }
+      ]
+    });
+  update(data);
+
+  taskLabel.text("Step 4: Added Table 5 with 8 rows");
+  taskButton.text("Next step: Remove Table 4");  
+}
+
+function task5() {
+  // remove table 4
+  data.splice(3, 1);
+  update(data);
+
+  taskLabel.text("Step 5: Removed Table 4");
+  taskButton.text("Next step: Change data of row 1 of Table 1")  ;
+}
+
+function task6() {
+  // change the content of row 1 of table 1
+  var item = data[0].rows[0].data;
+  data[0].rows[0].data = item + " - Updated";
+  update(data);
+
+  taskLabel.text("Step 6: Changed data of row 1 of Table 1");
+  taskButton.text("Restart") ;  
+}
+
+// task list (array of functions)
+var tasks = [task0, task1, task2, task3, task4, task5, task6];
+
+
+// function in charge of the array of tables
+function update(data) {
+
+  // select all divs in the table div, and then apply new data 
+  var divs = tableDiv.selectAll("div")
+      // after .data() is executed below, divs becomes a d3 update selection
+      .data(data,                     // new data
+        function(d) { return d.table  // "key" function to disable default by-index evaluation
+      }) 
+
+  // use the exit method of the d3 update selection to remove any deleted table div and contents (which would be absent in the data array just applied)
+  divs.exit().remove();
+
+  // use the enter metod of the d3 update selection to add new ("entering") items present in the data array just applied
+  var divsEnter = divs.enter().append("div")
+      .attr("id", function(d) { return d.table + "Div"; })
+      .attr("class", "well")
+
+  // add title in new div(s)
+  divsEnter.append("h5").text(function(d) { return d.table; });
+
+  // add table in new div(s)
+  var tableEnter = divsEnter.append("table")
+      .attr("id", function(d) { return d.table })
+      .attr("class", "table table-condensed table-striped table-bordered")
+
+  // append table head in new table(s)
+  tableEnter.append("thead")
+    .append("tr")
+      .selectAll("th")
+      .data(["Table Name", "Row Number", "Data Contents"]) // table column headers (here constant, but could be made dynamic)
+    .enter().append("th")
+      .text(function(d) { return d; })
+
+  // append table body in new table(s)
+  tableEnter.append("tbody");
+
+  // select all tr elements in the divs update selection
+  var tr = divs.select("table").select("tbody").selectAll("tr")
+      // after the .data() is executed below, tr becomes a d3 update selection
+      .data(
+        function(d) { return d.rows; }, // return inherited data item
+        function(d) { return d.row }    // "key" function to disable default by-index evaluation
+      ); 
+
+  // use the exit method of the update selection to remove table rows without associated data
+  tr.exit().remove();
+
+  // use the enter method to add table rows corresponding to new data
+  tr.enter().append("tr");
+
+  // bind data to table cells
+  var td = tr.selectAll("td")
+      // after the .data() is executed below, the td becomes a d3 update selection
+      .data(function(d) { return d3.values(d); });   // return inherited data item
+
+  // use the enter method to add td elements 
+  td.enter().append("td")               // add the table cell
+      .text(function(d) { return d; })  // add text to the table cell
+}
+
+
+</script>

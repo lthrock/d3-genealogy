@@ -1,0 +1,33 @@
+<script>
+  // render grid-1
+  var gridExample = squareGrid("#grid")
+      .width(300)
+      .height(300)
+      .square(30)
+      .stroke('#EE3124')
+      .on('_hover', function (d, i) {
+          d3.select(this).attr('fill', '#FDBB30');
+      });
+
+  gridExample.render();
+
+  // render grid-2
+  var gridExample2 = squareGrid("#grid-2")
+      .width(900)
+      .height(300)
+      .square(60)
+      .stroke('#130C0E')
+      .fill('#7AC143');
+
+  gridExample2.render();
+
+
+  // render grid-3
+  var gridExample3 = squareGrid("#grid-3")
+      .width(900)
+      .height(300)
+      .square(10)
+      .stroke('#00B0DD')
+      .render();
+
+</script>

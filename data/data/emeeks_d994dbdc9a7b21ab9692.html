@@ -1,0 +1,67 @@
+<script>
+
+function inter() {
+  d3.json("http://bl.ocks.org/emeeks/raw/c970c9ee3e242e90004b/world.geojson", function(data) {createMap(data)});
+  
+  function createMap(countries) {
+    width = 500;
+    height = 500;
+    projection = d3.geo.mercator()
+    .scale(80)
+    .translate([width / 2, height / 2])
+
+    geoPath = d3.geo.path().projection(projection);
+    
+    roundedCountries = [];
+    for (x in countries.features) {
+      for (y in countries.features[x].geometry.coordinates) {
+        if (countries.features[x].geometry.coordinates[y].length > 1) {
+          roundedCountries.push(countries.features[x].geometry.coordinates[y].map(function(d) {return projection(d)}))
+        }
+        else {
+          roundedCountries.push(countries.features[x].geometry.coordinates[y][0].map(function(d) {return projection(d)}))
+        }
+      }
+    }
+    
+    d3.select("svg").append("text").attr("id", "inter").attr("x", 40).attr("y", 40)
+
+    d3.select("svg").selectAll("path").data(roundedCountries)
+    .enter()
+    .append("path")
+    .style("stroke-width", 1)
+    .style("stroke", "black")
+    .style("fill-opacity", .5)
+
+    interpolateMethods = ["linear", "cardinal", "basis", "monotone", "step-before"]
+    var l = 0;
+
+    reinterpolate();
+    
+    function reinterpolate() {
+    colorScale = ["#7fc97f","#beaed4","#fdc086","#ffff99","#386cb0"];
+      if (l == 5) {
+        l = 0;
+      }
+    countryDraw = d3.svg.line().x(function(d){ return d[0]}).y(function(d){return d[1]}).interpolate(interpolateMethods[l])
+
+    d3.select("#inter").text(interpolateMethods[l])
+    d3.select("svg").selectAll("path")
+    .attr("d", countryDraw)
+    .style("fill", colorScale[l]);
+    
+    setTimeout(reinterpolate,2000);
+    l++;
+    }
+    
+    
+  }
+  
+}
+</script>
+<body onload="inter()">
+<div id="map"><svg></svg></div>
+<footer>
+<script src="http://d3js.org/d3.v3.min.js" charset="utf-8" type="text/javascript"></script>
+<script src="http://d3js.org/d3.geo.projection.v0.min.js" type="text/javascript">
+</script>

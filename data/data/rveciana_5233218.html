@@ -1,0 +1,36 @@
+<script>
+var width = 960,
+    height = 500;
+var states;
+var projection = d3.geo.mercator()
+    .center([-97,37])
+    .scale(4000)
+    .translate([width / 2, height / 2]);
+
+
+var path = d3.geo.path()
+.projection(projection);
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+d3.json("/mbostock/raw/4090846/us.json", function(error, us) {
+   states = svg.append("path")
+      .attr("class", "states")
+      .datum(topojson.object(us, us.objects.states))
+      .attr("d", path);
+
+  
+});
+
+d3.select("#change").on("click", function() {
+  projection = d3.geo.albers();
+path.projection(projection);
+states.transition()
+      .duration(10000)
+      .attr("d", path);
+});
+
+
+</script>

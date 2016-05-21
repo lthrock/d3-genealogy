@@ -1,0 +1,59 @@
+<script>
+
+var width = 960,
+    height = 500;
+
+var projection = d3.geo.mercator()
+    .scale(39000)
+    .center([-97.75, 30.32])
+    .translate([width / 2, height / 2]);
+
+var path = d3.geo.path()
+    .projection(projection);
+
+var svg = d3.select('body').append('svg')
+    .attr('width', width)
+    .attr('height', height);
+
+var legend = svg.append('g')
+  .attr('transform', 'translate(' + (width - 120) + ',10)');
+
+var key = legend.selectAll('g')
+  .data(['Adler', 'Martinez', 'NA'])
+  .enter().append('g')
+  .attr('transform', function (d,i) {return 'translate(0,' + (i*25) + ')';});
+
+var name = key.selectAll('text')
+  .data(function (d) {return [d];})
+  .enter().append('text')
+  .attr('dy', '1.33em')
+  .text(function (d) {return d;});
+
+var colorKey = key.selectAll('rect')
+  .data(function (d) {return [d];})
+  .enter().append('rect')
+  .attr('width', 25)
+  .attr('height', 25)
+  .attr('transform', function (d,i) {return 'translate(75,' + (i*25) + ')';})
+  .classed('adler', function (d) {return d === 'Adler';})
+  .classed('martinez', function (d) {return d === 'Martinez';})
+  .classed('na', function (d) {return d === 'NA';});
+
+d3.json('precincts.json', draw);
+
+function draw(error, data) {
+  svg.append('g')
+      .attr('class', 'precincts')
+    .selectAll('path')
+      .data(topojson.feature(data, data.objects.precincts).features)
+    .enter().append('path')
+      .attr('d', path)
+      .classed('adler', function (d) {
+        return d.properties.adler > d.properties.martinez;
+      })
+      .classed('martinez', function (d) {
+        return d.properties.adler < d.properties.martinez;
+      });
+}
+
+</script>

@@ -1,0 +1,16 @@
+<script>
+map = d3.carto.map();
+
+d3.select("#map").call(map);
+
+wcLayer = d3.carto.layer.tile();
+wcLayer
+  .tileType("cartodb")
+  .path("light_all")
+  .label("CartoDB Light")
+  .visibility(true);
+
+map.addCartoLayer(wcLayer);
+map.centerOn([-79.4,43.7],"latlong");
+map.setScale(10);
+</script>

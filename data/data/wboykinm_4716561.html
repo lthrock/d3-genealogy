@@ -1,0 +1,235 @@
+<script>
+// slippy map code from
+// http://bl.ocks.org/3943330 by tmcw
+// http://bl.ocks.org/4132797 by mbostock
+
+var width = window.innerWidth,
+    height = window.innerHeight,
+    prefix = prefixMatch(["webkit", "ms", "Moz", "O"]);
+
+var inset = {
+  w: 320, 
+  h: 320, 
+  projection: null, extentRect: null, svg: null, path: null, graticule: null,
+  init: function() {
+    inset.projection = d3.geo.orthographic()
+                        .scale(140)
+                        .translate([inset.w / 2, inset.h / 2])
+                        .clipAngle(90)
+
+    inset.path = d3.geo.path()
+                  .projection(inset.projection)
+                  .pointRadius(1.5);
+
+    inset.graticule = d3.geo.graticule();
+
+    inset.extentRect = [{ 
+          "type": "Feature", 
+          "geometry": { "type": "Polygon", "coordinates": [[]]}
+          }]
+
+    inset.svg = d3.select("body").append("svg")
+                  .attr("width", inset.w)
+                  .attr("height", inset.h)
+                  .attr("class","noclicks")
+    queue()
+        .defer(d3.json, "world-110m.json")
+        .defer(d3.json, "places.json")
+        .await(inset.ready);
+  },
+  ready: function(error,world,places) {
+    var defs = inset.svg.append("defs")
+    var ocean = defs.append("radialGradient")
+            .attr("id", "ocean")
+            .attr("cx", "75%")
+            .attr("cy", "25%");
+        ocean.append("stop").attr("offset", "5%").attr("stop-color", "#e6e6f4");
+        ocean.append("stop").attr("offset", "100%").attr("stop-color", "#a2abb3");
+
+    var highlight = defs.append("radialGradient")
+          .attr("id", "highlight")
+          .attr("cx", "75%")
+          .attr("cy", "25%");
+        highlight.append("stop")
+          .attr("offset", "5%").attr("stop-color", "#ffd")
+          .attr("stop-opacity","0.6");
+        highlight.append("stop")
+          .attr("offset", "100%").attr("stop-color", "#ba9")
+          .attr("stop-opacity","0.2");
+
+    var shade = defs.append("radialGradient")
+          .attr("id", "shade")
+          .attr("cx", "50%")
+          .attr("cy", "40%");
+        shade.append("stop")
+          .attr("offset","50%").attr("stop-color", "#a2abb3")
+          .attr("stop-opacity","0")
+        shade.append("stop")
+          .attr("offset","100%").attr("stop-color", "#57616b")
+          .attr("stop-opacity","0.3")
+
+    var halo = defs.append("radialGradient")
+          .attr("id", "halo")
+          .attr("cx", "50%")
+          .attr("cy", "50%");
+        halo.append("stop")
+          .attr("offset","85%").attr("stop-color", "#FFF")
+          .attr("stop-opacity","1")
+        halo.append("stop")
+          .attr("offset","100%").attr("stop-color", "#FFF")
+          .attr("stop-opacity","0")  
+
+    inset.svg.append("ellipse")
+      .attr("cx", inset.w/2).attr("cy", inset.h/2)
+      .attr("rx", inset.projection.scale()+20)
+      .attr("ry", inset.projection.scale()+20)
+      .attr("class", "noclicks")
+      .style("fill", "url(#halo)");
+
+    inset.svg.append("circle")
+      .attr("cx", inset.w / 2).attr("cy", inset.h / 2)
+      .attr("r", inset.projection.scale())
+      .attr("class", "noclicks")
+      .style("fill", "url(#ocean)");
+
+    inset.svg.append("path")
+      .datum(topojson.object(world, world.objects.land))
+      .attr("class", "land")
+      .attr("d", inset.path);
+
+    inset.svg.append("path")
+      .datum(inset.graticule)
+      .attr("class", "graticule noclicks")
+      .attr("d", inset.path);
+
+    inset.svg.append("circle")
+      .attr("cx", inset.w / 2).attr("cy", inset.h / 2)
+      .attr("r", inset.projection.scale())
+      .attr("class","noclicks")
+      .style("fill", "url(#highlight)");
+
+    inset.svg.append("circle")
+      .attr("cx", inset.w / 2).attr("cy", inset.h/ 2)
+      .attr("r", inset.projection.scale())
+      .attr("class","noclicks")
+      .style("fill", "url(#shade)");
+
+    inset.svg.append("g").attr("class","points")
+        .selectAll("text").data(places.features)
+      .enter().append("path")
+        .attr("class", function(d){
+          return "point r" + (5-d.properties.scalerank)
+        })
+        .attr("d", inset.path);
+    
+    inset.svg.append("g").attr("class","extents")
+        .selectAll("path").data(inset.extentRect)
+      .enter().append("path")
+        .attr("class", "extent")
+        .attr("d", inset.path);
+  },
+  refresh: function(dims) {
+    inset.projection.rotate([-dims.center[0],-dims.center[1]])      
+
+    var e = dims.topline.concat(dims.bottomline);
+    e.push([dims.topline[0]])
+    
+    inset.extentRect[0].geometry.coordinates[0] = e;
+
+    inset.svg.select(".extent").attr("d", inset.path);
+    inset.svg.select(".land").attr("d", inset.path);
+    inset.svg.select(".graticule").attr("d", inset.path);
+    inset.svg.select(".extent").attr("d", inset.path);
+    inset.svg.selectAll(".point").attr("d", inset.path);
+  }
+}
+
+var tile = d3.geo.tile()
+    .size([width, height]);
+
+var projection = d3.geo.mercator()
+    .center([-96, 38.3]);
+
+var zoom = d3.behavior.zoom()
+    .scale(1 << 13)
+    .scaleExtent([1 << 12, 1 << 23])
+    .translate([width / 2, height / 2])
+    .on("zoom", refresh);
+
+var map = d3.select("body").append("div")
+    .attr("class", "map")
+    .style("width", width + "px")
+    .style("height", height + "px")
+    .call(zoom)
+    .on("mousemove", mousemoved);
+
+var layer = map.append("div").attr("class", "layer");
+var info = map.append("div").attr("class", "info");
+var attrib = map.append("div").attr("class", "attrib").html('Map tiles by <a href="http://mapbox.com">Mapbox</a>, Data &copy; <a href="http://openstreetmap.org">OpenStreetMap Contributors</a>.')
+
+inset.init();
+refresh();
+
+function refresh() {
+  var tiles = tile
+        .scale(zoom.scale())
+        .translate(zoom.translate())
+        ();
+
+  projection
+      .scale(zoom.scale())
+      .translate(zoom.translate());
+
+  var map_dims = { 
+        topline: [],
+        bottomline: [],
+        center:  projection.invert([width/2,height/2])
+      }
+
+  var samples = 8,
+      step = width/samples;
+
+  for (var i = 0; i < samples; i++) {
+    map_dims.topline
+      .push(projection.invert( [step*i,0] ))
+    map_dims.bottomline
+      .push(projection.invert( [step*(samples-i-1),height] ))
+  }
+
+  inset.refresh(map_dims)
+  
+  var image = layer
+      .style(prefix + "transform", matrix3d(tiles.scale, tiles.translate))
+    .selectAll(".tile")
+      .data(tiles, function(d) { return d; });
+
+  image.exit().remove();
+  image.enter().append("img")
+      .attr("class", "tile")
+      .attr("src", function(d) { return "http://a.tiles.mapbox.com/v3/landplanner.map-dm7abyjg/" + d[2] + "/" + d[0] + "/" + d[1] + ".png"; })
+      .style("left", function(d) { return (d[0] << 8) + "px"; })
+      .style("top", function(d) { return (d[1] << 8) + "px"; });
+}
+
+function mousemoved() {
+  info.text(formatLocation(projection.invert(d3.mouse(this)), zoom.scale()));
+}
+
+function matrix3d(scale, translate) {
+  var k = scale / 256, r = scale % 1 ? Number : Math.round;
+  return "matrix3d(" + [k, 0, 0, 0, 0, k, 0, 0, 0, 0, k, 0, r(translate[0] * scale), r(translate[1] * scale), 0, 1 ] + ")";
+}
+
+function prefixMatch(p) {
+  var i = -1, n = p.length, s = document.body.style;
+  while (++i < n) if (p[i] + "Transform" in s) return "-" + p[i].toLowerCase() + "-";
+  return "";
+}
+
+function formatLocation(p, k) {
+  var format = d3.format("." + Math.floor(Math.log(k) / 2 - 2) + "f");
+  return (p[1] < 0 ? format(-p[1]) + "S" : format(p[1]) + "N") + " "
+       + (p[0] < 0 ? format(-p[0]) + "W" : format(p[0]) + "E");
+}
+
+</script>

@@ -1,0 +1,46 @@
+<script>
+var svg = d3.select('svg');
+
+var dataSet = d3.range(100);
+
+var wRange = 960;
+var hRange = 500;
+
+
+var circle = svg.selectAll("circle")
+	.data(dataSet)
+	.enter()
+	.append('circle')
+	.attr({
+		'width':100,
+		'height':30,
+		'fill': 'blue',
+		'fill-opacity':0.5,
+		'r': function(){ return ( Math.random() * 15 ) + 4 },
+		'cx':function(){ return Math.floor(Math.random() * wRange )},
+		'cy':function(){ return Math.floor(Math.random() * hRange )}
+	});
+	
+var drag = d3.behavior.drag()
+    .on("drag", function(){
+		circle
+			.transition()
+			.delay(function(d,i){ return i * 100 })
+			.attr({
+				'cx':d3.event.x,
+				'cy':d3.event.y
+			})
+	});
+	
+circle.call(drag);
+
+
+d3.select("#reset").on('click', function(){
+	circle.transition()
+		.attr({
+		'cx':function(){ return Math.floor(Math.random() * wRange )},
+		'cy':function(){ return Math.floor(Math.random() * hRange )}		
+	})
+})
+
+</script>

@@ -1,0 +1,288 @@
+<script>
+
+      var map = d3.select("#map"),
+          width = map.property("offsetWidth"),
+          height = map.property("offsetHeight"),
+          minArea = location.search
+            ? +location.search.substr(1) || 0
+            : 0,
+          range = d3.select("#area")
+            .property("value", minArea)
+            .on("change", function() {
+              minArea = +this.value;
+              update();
+            });
+
+      var zoom = d3.behavior.zoom()
+        // .translate([-80, 10])
+        .translate([-1841, -526])
+        .scale(3.5)
+        .scaleExtent([0.5, 4.0])
+        .on("zoom", updateZoom);
+
+      function updateZoom() {
+        var scale = zoom.scale();
+        g.attr("transform", "translate(" + zoom.translate() + ") scale(" + [scale, scale] + ")");
+      }
+
+      var svg = map.append("svg")
+        .attr("width", width)
+        .attr("height", height)
+        .call(zoom);
+
+      var g = svg.append("g")
+        .attr("id", "states");
+
+      updateZoom();
+
+      var proj = d3.geo.albers(),
+          linear = function(c) {
+            return [c[0], c[1]];
+          };
+
+      var path = d3.geo.path()
+        .projection(linear);
+
+      var simplify = d3.simplify()
+        .topology(true)
+        .projection(proj)
+        .area(minArea);
+
+      var collection;
+      d3.json("us-states.json", function(us) {
+
+        /*
+        var ignore = [
+          "Alaska",
+          "Hawaii",
+          "Guam",
+          "Puerto Rico"
+        ];
+        us.features = us.features.filter(function(state) {
+          return ignore.indexOf(state.properties.name) === -1;
+        });
+        */
+
+        var stateNames = [
+          "Illinois",
+          "Indiana",
+          "Ohio",
+          "Kentucky"
+        ];
+        us.features = us.features.filter(function(state) {
+          return stateNames.indexOf(state.properties.name) > -1;
+        });
+
+        collection = us;
+        update();
+      });
+
+      function update() {
+        // console.log("minArea:", minArea);
+
+        var simplified = simplify
+          .area(minArea)
+          .project(copy(collection));
+
+        // XXX: you have to do this to "apply" the simplification,
+        // or call path(simplify(d)) in side the "d" setter below
+        simplified = simplify(simplified);
+
+        var states = g.selectAll("path.state")
+          .data(simplified.features, function(d) {
+            return d.id;
+          });
+
+        states.enter()
+          .append("path")
+            .attr("class", "state")
+            .attr("id", function(d) {
+              return d.properties.name;
+            })
+            .append("title")
+              .text(function(d) {
+                return d.properties.name;
+              });
+
+        states.exit().remove();
+
+        states.attr("d", path);
+
+        // topology analysis
+        var edges = getEdges(simplified.features, simplified.topology);
+        console.log("edges:", edges);
+
+        var color = d3.scale.linear()
+          .domain([0, edges.length - 1])
+          .range(["#00f", "#f00"]);
+
+        var eg = g.selectAll("g.edge")
+          .data(edges, function(d) {
+            return d.id;
+          });
+
+        var enter = eg.enter()
+          .append("g")
+            .attr("class", "edge")
+            .attr("id", function(d) {
+              return "edge" + d.id;
+            });
+
+        eg.exit().remove();
+
+        enter.append("path");
+
+        var dots = eg.selectAll("circle")
+          .data(function(d) {
+            return d.coords;
+          });
+
+        dots.enter()
+          .append("circle")
+            .attr("class", "point")
+            .attr("r", .5);
+
+        dots.exit().remove();
+
+        dots.attr("cx", function(d) {
+            return d[0];
+          })
+          .attr("cy", function(d) {
+            return d[1];
+          });
+
+        var line = d3.svg.line(),
+            lines = eg.select("path")
+              .attr("stroke", function(d, i) {
+                return color(i);
+              })
+              .attr("d", function(d) {
+                return line(d.coords);
+              });
+      }
+
+      function getEdges(features, topo) {
+        var edgesById = {};
+        console.log("topo:", topo);
+        features.forEach(function(feature) {
+          // get all the rings
+          var rings = getRings(feature.geometry);
+          rings.forEach(function(ring) {
+            // remember the last edge
+            var lastEdge;
+            ring.forEach(function(coord, i) {
+              var coord = coord.slice(0, 2),
+                  key = coord.join(","),
+                  id = topo.idByPoint[key];
+
+              // shared coords are always solo,
+              // and get pushed onto the last edge
+              if (topo.sharedPoints[key] && lastEdge) {
+                lastEdge.coords.push(coord);
+                return;
+              }
+
+              var edge;
+              // if we have an edge with this id...
+              if (edgesById.hasOwnProperty(id)) {
+                edge = edgesById[id];
+                // if the edge doesn't already reference this feature
+                if (edge.features.indexOf(feature) === -1) {
+                  // add it to the features list
+                  edge.features.push(feature);
+                }
+                // if the edge doesn't alreay contain this coord
+                if (!edge.seen.hasOwnProperty(key)) {
+                  // push it onto the list
+                  edge.coords.push(coord);
+                  // and mark it as seen
+                  edge.seen[key] = 1;
+                }
+              } else {
+                // otherwise, create the new edge
+                edge = edgesById[id] = {
+                  features: [feature],
+                  coords: [coord],
+                  seen: {}
+                };
+
+                // if the last edge has the same id...
+                if (lastEdge && lastEdge.id === id) {
+                  // get its last coordinate and key
+                  var prev = lastEdge.coords[lastEdge.coords.length - 1],
+                      prevKey = prev.join(",");
+                  // and if the edge doesn't already contain that coord
+                  if (!edge.seen.hasOwnProperty(prevKey)) {
+                    // push it onto the list
+                    edge.coords.unshift(prev);
+                    // and mark it as seen
+                    edge.seen[prevKey] = 1;
+                  }
+                }
+                edge.seen[key] = 1;
+              }
+
+              lastEdge = edge;
+            });
+          });
+        });
+
+        for (var id in edgesById) {
+          var edge = edgesById[id];
+        }
+
+        return d3.entries(edgesById)
+          .filter(function(entry) {
+            return true; // entry.value.coords.length > 1;
+          })
+          .map(function(entry) {
+            return {
+              id: entry.key,
+              features: entry.value.features,
+              coords: d3.values(entry.value.coords)
+            };
+          });
+      }
+
+      function getRings(geometry) {
+        var rings = [];
+        switch (geometry.type) {
+          case "Line":
+          case "LineString":
+            return geometry.coordinates;
+
+          case "Polygon":
+            geometry.coordinates.forEach(function(ring) {
+              rings.push(ring);
+            });
+            break;
+
+          case "MultiPolygon":
+            geometry.coordinates.forEach(function(poly) {
+              poly.forEach(function(ring) {
+                rings.push(ring);
+              });
+            });
+            break;
+
+          // TODO: support other geometry types:
+          // GeometryCollection
+        }
+        return rings;
+      }
+
+      function copy(d) {
+        return d instanceof Array
+          ? d.map(copy)
+          : (typeof d === "number" || typeof d === "string")
+            ? d
+            : copyObject(d);
+      }
+
+      function copyObject(d) {
+        var o = {};
+        for (var k in d) o[k] = copy(d[k]);
+        return o;
+      }
+
+    </script>

@@ -1,0 +1,53 @@
+<script>
+
+var 
+  width = '500px',
+  height = '300px';
+
+var readLineData = () => {
+  var 
+    text = document.body.querySelector('textarea').value.trim(),
+    lines = text.split(/\n/g).filter(line => line);
+  
+  var pairs  = lines.map(line => line.trim().split(/[ ]+/g));
+
+  return pairs.map(pair => {
+    return { x: parseInt(pair[0]), y: parseInt(pair[1]) }
+  })
+}
+
+var svg = d3.select('svg'),
+  lineFunction, 
+  lineGraph;
+
+  svg.attr({ width : width, height : height });
+
+var pathData = document.body.querySelector('#pathData');
+
+function renderD(){ 
+  pathData.textContent = document.body.querySelector('path').getAttribute('d');
+}
+
+function draw(){ 
+
+   d3.selectAll('path').remove();
+
+   lineFunction = d3.svg.line()
+    .x(function(d) { return d.x; })
+    .y(function(d) { return d.y; })
+    .interpolate("linear");
+  
+   lineGraph = svg.append("path")
+    .attr("d", lineFunction(readLineData()))
+}
+
+document.addEventListener('DOMContentLoaded', draw);
+
+
+var ta = document.querySelector('textarea')
+ta.addEventListener('input', draw);
+ta.addEventListener('input', renderD);
+
+
+
+</script>

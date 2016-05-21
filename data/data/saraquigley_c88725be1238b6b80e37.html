@@ -1,0 +1,107 @@
+<script>
+    
+
+    var myApp = angular.module('myApp', []);
+    var arc = d3.svg.arc();
+
+    var stack = d3.layout.stack()
+            .values(function(d) { return d.values; })
+            .y(function(d) { return d.count; });
+
+    var nest = d3.nest()
+        .key(function(d) { return d.residency; });
+
+    myApp.controller('mainCtrl', function ($scope) {
+        
+        //THIS DOES NOT WORK
+        d3.csv('csv-help.csv', function(err, data) {
+              if(err){ throw err; }
+                $scope.data_res = data;
+                $scope.$apply();
+              });
+        
+        // THIS WORKS
+        $scope.data_res = [{ label: 'CA-Residents', value: 76 },
+                     { label: 'Non-Residents', value: 24 }];
+
+        // keep this for either case
+        $scope.accessor_res = function(d){ return +d.value };
+        console.log('$scope ',$scope);
+    });
+
+    myApp.directive('resDonut', function() {
+      function link(scope, el, attr){
+        var color = d3.scale.ordinal().range(["#bd9e39","#0868ac"]);
+        var data = scope.data;
+        var width = 150;
+        var height = 150;
+        var min = Math.min(width, height);
+        var svg = d3.select(el[0]).append('svg');
+        var pie = d3.layout.pie().sort(null);
+        arc.outerRadius(min / 2 * 0.8)
+          .innerRadius(min / 2 * 0.45);
+        
+        pie.value(function(d){ return +d.value ; });
+
+        svg.attr({width: width, height: height});
+        var g = svg.append('g')
+          // center the donut chart
+          .attr('transform', 'translate(' + width / 2 + ',' + height / 2 + ')');
+        
+        // add the <path>s for each arc slice
+        var arcs = g.selectAll('path').data(pie(data))
+          .enter().append('path')
+            .style('stroke', 'white')
+            .attr('fill-opacity', 0.75)
+            .attr('fill', function(d, i){ return color(i); })
+            // store the initial angles
+            .each(function(d) { return this._current = d });
+
+       var labelshadows = g.selectAll('.shadow').data(pie(data))
+          .enter().append("text")
+          .attr("transform", function(d) { return "translate(" + arc.centroid(d) + ")"; })
+          .attr("dy", ".35em")
+          .attr("class", "shadow")
+          .style("text-anchor", "middle")
+          .text(function(d) { return d.data.label === "CA-Residents" ? "CA-Res" : "Non-Res"; });
+
+        var labels = g.selectAll('.label').data(pie(data))
+          .enter().append("text")
+          .attr("transform", function(d) { return "translate(" + arc.centroid(d) + ")"; })
+          .attr("dy", ".35em")
+          .attr("class", "label")
+          .style("text-anchor", "middle")
+          .text(function(d) { return d.data.label === "CA-Residents" ? "CA-Res" : "Non-Res"; });
+
+        scope.$watch('data', function (newVal, oldVal) {
+          console.log("an element within `data` changed!");
+          var ca = newVal.filter(function(d) {return d.label === "CA-Residents";}),
+              nr = newVal.filter(function(d) {return d.label === "Non-Residents";}),
+              duration = 750;
+              nr[0].value = +nr[0].value;
+          ca[0].value = 100 - nr[0].value;
+          arcs.data(pie(scope.data)); //.attr('d', arc)
+          arcs.transition().duration(duration).attrTween('d', arcTween);
+          labels.data(pie(scope.data)).transition().duration(duration).attr("transform", function(d) { return "translate(" + arc.centroid(d) + ")"; });
+          labelshadows.data(pie(scope.data)).transition().duration(duration).attr("transform", function(d) { return "translate(" + arc.centroid(d) + ")"; });
+        }, true);
+      }
+      return {
+        link: link,
+        restrict: 'E',
+        scope: { 'data': '=',
+                'accessor': '=' }
+      };
+
+    });
+
+    function arcTween(a) {
+          // see: http://bl.ocks.org/mbostock/1346410
+          var i = d3.interpolate(this._current, a);
+          this._current = i(0);
+          return function(t) {
+            return arc(i(t));
+          };
+        }
+
+  </script>

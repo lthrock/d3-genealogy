@@ -1,0 +1,249 @@
+<script>
+  function print(arg){
+    if(typeof arg === 'object') { document.write(JSON.stringify(arg)); }
+    else { document.write(arg); }
+  }
+
+  function hr(){
+    document.write('<hr>');
+  }
+  function br(){
+    document.write('<br>');
+  }
+
+
+  /************************************
+  * 
+  ***********************************/
+  print('<b></b>');
+  br();
+
+  var dataArray = [10, 20, 50, 40, 30, 600];
+  print('<span class="red">var dataArray = [10, 20, 50, 40, 30, 600];</span>');
+  hr();
+
+  //
+  print('dataArray.sort(d3.ascending))=>');
+  print(dataArray.sort(d3.ascending));
+  hr();
+
+  //
+  print('dataArray.sort(d3.descending))=>');
+  print(dataArray.sort(d3.descending));
+  hr();
+
+
+  //
+  print('d3.min(dataArray)=>');
+  print(d3.min(dataArray));
+  hr();
+
+  //
+  print('d3.max(dataArray)=>');
+  print(d3.max(dataArray));
+  hr();
+
+  //
+  print('d3.extent(dataArray)=>');
+  print(d3.extent(dataArray));
+  hr();
+
+  //
+  print('d3.sum(dataArray)=>');
+  print(d3.sum(dataArray));
+  hr();
+
+  //
+  print('d3.mean(dataArray)=>');
+  print(d3.mean(dataArray));
+  hr();
+
+
+  //
+  print('d3.median(dataArray)=>');
+  print(d3.median(dataArray));
+  hr();
+
+
+  //
+  print('d3.quantile(dataArray.sort(), 1)=>');
+  print(d3.quantile(dataArray.sort(), 1));
+  br();
+  print('d3.quantile(dataArray.sort(), 0.5)=>');
+  print(d3.quantile(dataArray.sort(), 0.5));
+  br();
+  print('d3.quantile(dataArray.sort(), 0.25)=>');
+  print(d3.quantile(dataArray.sort(), 0.25));
+  hr();
+
+  //
+  print('d3.bisect(dataArray, 30)=>');
+  print(d3.bisect(dataArray, 30));
+  br();
+  print('d3.bisectLeft(dataArray, 30)=>'); //
+  print(d3.bisectLeft(dataArray, 30));
+  br();
+  print('d3.bisectRight(dataArray, 30)=>');//
+  print(d3.bisectRight(dataArray, 30));
+  hr();
+
+  //
+  print('d3.shuffle(dataArray)=>');
+  print(d3.shuffle(dataArray));
+  hr();
+
+  print('<b>Sets</b>');
+  br();
+  print('<span class="red">var dataSet = d3.set(dataArray)</span>');
+  var dataSet = d3.set(dataArray);
+  br();
+  print(dataSet);
+  hr();
+
+  //
+  print('dataSet.has(20)=>');
+  print(dataSet.has(20));
+  br();
+  print('dataSet.has(120)=>');
+  print(dataSet.has(120));
+  hr();
+
+
+  //
+  print('dataSet.add(199);');
+  br();
+  print('dataSet=>');
+  dataSet.add(199)
+  print(dataSet);
+  hr()
+
+  //
+  print('dataSet.remove(600);');
+  br();
+  print('dataSet=>');
+  dataSet.remove(600)
+  print(dataSet);
+  hr()
+
+  //
+  print('dataSet.values()=>');
+  print(dataSet.values());
+  hr();
+
+
+
+  /************************************
+  * 
+  ***********************************/
+  print('<b></B>');
+  br();
+
+
+  var dataObj = {'x':10, 'y':20, 'z':30}
+  print('<span class="red">var dataObj=');
+  print(dataObj);
+  print('</span>');
+  hr();
+
+  //
+  print('d3.keys(dataObj)=>');
+  print(d3.keys(dataObj));
+  hr();
+
+  //
+  print('d3.values(dataObj)=>');
+  print(d3.values(dataObj));
+  hr();
+
+  //{key:, value:}
+  print('d3.entries(dataObj)=>');
+  print(d3.entries(dataObj));
+  hr();
+
+
+
+  /************************************
+  * Maps
+  ***********************************/
+  print('<b>Maps</b>');
+  br();
+
+  print('<span class="red">var dataMap = d3.map(dataObj)</span>');
+  var dataMap = d3.map(dataObj);
+  br();
+  print(dataMap);
+  hr();
+
+  //
+  print('dataMap.has("y")=>');
+  print(dataMap.has("y"));
+  br();
+  print('dataMap.has("q")=>');
+  print(dataMap.has("q"));
+  hr();
+
+  //
+  print('dataMap.get("y")=>');
+  print(dataMap.get("y"));
+  hr();
+
+
+  //
+  print('dataMap.set("a", 10);');
+  br();
+  print('dataMap=>');
+  dataMap.set("a", 10)
+  print(dataMap);
+  hr()
+
+  //
+  print('dataMap.remove("z");');
+  br();
+  print('dataMap=>');
+  dataMap.remove("z")
+  print(dataMap);
+  hr()
+
+
+  //
+  print('dataMap.keys()=>');
+  print(dataMap.keys());
+  hr();
+
+  //
+  print('dataMap.values()=>');
+  print(dataMap.values());
+  hr();
+
+  //{key:, value:}
+  print('dataMap.entries()=>');
+  print(dataMap.entries());
+  hr();
+
+
+
+
+  /************************************
+  * Array Operators
+  ***********************************/
+  print('<b>Array Operators</b>');
+  br();
+
+  //
+  print('d3.range(10, 50, 5)=>');
+  print(d3.range(10, 50, 5));
+  hr();
+
+  //
+  print('d3.permute(["a", "b", "c"], [1, 2, 0]) =>');
+  print(d3.permute(["a", "b", "c"], [1, 2, 0]) );
+  hr();
+
+
+  //array
+  print('d3.zip(dataArray)=>');
+  print(d3.zip(dataArray));
+  hr();
+
+  
+</script>

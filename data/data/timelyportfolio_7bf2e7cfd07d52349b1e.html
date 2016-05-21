@@ -1,0 +1,23 @@
+<script>
+      var data = mobservable.observable([]);
+      var data_obs = mobservable.observable(function(){
+        return data.slice();
+      })
+      
+      mobservable.autorun(function(){
+        var bodyp = d3.select("body").selectAll("p").data(data_obs());
+        bodyp.enter().append("p");
+        bodyp.text(function(d){return d});
+        bodyp.exit().remove();
+      })
+      
+      var time = 0;
+      
+      setInterval(
+        function(){
+          data.replace(d3.range(time,time+10));
+          time = time + 10;
+        },
+        1000
+      )
+    </script>

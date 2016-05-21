@@ -1,0 +1,51 @@
+<script>
+var dataset = [25,10,40,12.5, 12.5];
+
+//Width and height
+var w = 300;
+var h = 300;
+
+// outer radius of the pie is half the width
+var outerRadius = w / 2;
+
+//draws wedges
+var arc = d3.svg.arc()
+.innerRadius(100) //zero for a pie chart - but if you put a non-zero number in you get a ring chart
+.outerRadius(outerRadius);
+
+// define default pie layout
+var pie = d3.layout.pie();
+
+//make the SVG, put it before the end of the article element, set its width & height
+var svg = d3.select("article")  
+.append("svg")
+.attr("width", w)
+.attr("height", h);
+
+//Set up groups (g)
+var arcs = svg.selectAll("g.arc") // not created yet
+.data(pie(dataset)) //bind data to a group
+.enter()
+.append("g")
+.attr("transform", "translate(" + outerRadius + "," + outerRadius + ")"); // put the group into place
+
+//Draw arc paths
+arcs.append("path")
+.attr("fill", function(d,i) {
+return "rgb(221, 65," + (i * 36) +" )"; //make a fill based on 'Tangerine Tango', Pantone Colour of the year for 2012 #DD4124
+})
+.attr("d", arc);
+
+//Labels
+arcs.append("text")
+.attr("transform", function(d) {
+return "translate(" + arc.centroid(d) + ")";
+})
+.attr("text-anchor", "middle")
+.attr("font-family", "Helvetica")
+.attr("font-size", "12px")
+.attr("fill", "white")
+.text(function(d) {
+return d.value;
+});
+</script>

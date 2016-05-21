@@ -1,0 +1,44 @@
+<script>
+
+var el = d3.select('.thermometer')
+var w = el.node().clientWidth
+var h = el.node().clientHeight
+var r = Math.min(w, h) / 2
+var pi = Math.PI
+
+var svg = el.select('svg').attr({width: w, height: h})
+  .append('g').attr('transform', 'translate(' + w / 2 + ',' + h / 2 + ')')
+
+var pie = d3.layout.pie().startAngle(-pi/1.2).endAngle(pi/1.2)
+
+var arc = d3.svg.arc().innerRadius(r * 0.7).outerRadius(r * 0.9)
+
+svg.selectAll('path.degree').data(pie(d3.range(90).map(function(){ return 1 })))
+  .enter().append('path').attr('class', 'degree')
+  .attr('d', arc)
+
+var handle = svg.append('g')
+handle.append('rect').attr('class', 'handle')
+  .attr({ width: 50, height: 5, y: -2.5, x: r - 65 })
+
+var scale = d3.scale.linear().domain([0, 100]).range([-180, 0])
+
+var display = svg.append('text').text('72').attr('y', 20)
+
+handle.attr('transform', 'rotate(0)').call(loop)
+
+var val = 0
+function loop(sel){
+  val = Math.round(Math.random() * 100)
+  sel.transition().duration(1000)
+  .attr('transform', 'rotate(' + scale(val) + ')')
+  .each('end', function(){ loop(d3.select(this)) })
+  display.datum(val).transition().duration(1000).tween("text", function(d) {
+      var i = d3.interpolate(this.textContent, d)
+      return function(t) {
+          this.textContent = Math.round(i(t));
+      };
+  });
+}
+
+    </script>

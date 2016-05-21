@@ -1,0 +1,35 @@
+<script>
+
+    var w = 960, h = 500;
+
+    // dataset = [
+    // { "x":05, "y":30}, { "x":75, "y":30},
+    // { "x":75, "y":90}, { "x":150, "y":90},
+    // { "x":150, "y":150}, { "x":190, "y":150}
+    // ];
+
+        var dataset = [];                         
+		for (var i = 0; i < 108; i++) {            
+	    		var x = Math.floor((Math.random()*900)+1); 
+	    		var y = Math.floor((Math.random()*500)+1);  
+	    		dataset.push({"x":x, "y":y});            
+		};
+
+        var lineFunction = d3.svg.line()
+				.x(function(d) { return d.x; })
+				.y(function(d) { return d.y; })
+				.interpolate("linear");
+
+	svgViewport = d3.select("body").append("svg")
+				.attr("width", w)
+				.attr("height", h);
+
+	svgViewport.append("path")
+				.datum(dataset)
+				.attr("d", lineFunction)
+				.attr("stroke", "black")
+				.attr("stroke-width", 3)
+				.attr("fill", "none");
+
+
+    </script>

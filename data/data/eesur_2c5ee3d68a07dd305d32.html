@@ -1,0 +1,44 @@
+<script>
+
+var words = ["an artist", "a dad", "a coder", "beautiful", "full of multitudes", "full of contradictions", "paradoxical", "a brother", "a designer", "lover of dark chocolate", "a poor spller", "a gong player", "a maker", "neither young or old", "that", "a creative coder", "a lover of percussion", "a husband", "a friend", "a son", "a hobbyist illustrator", "always learning", "a beginner at all things worthwhile"];  
+var randomWord = function() {
+  var x = "I am " + words[Math.floor(Math.random() * words.length)];
+  return x;
+};
+
+var w = 960,
+    h = 500;
+
+var svg = d3.select("body").append("svg")
+    .attr("width", w)
+    .attr("height", h)
+  .append("g")
+    .attr("transform", "translate(32," + (h / 2) + ")");
+
+function update(data) {
+
+  // Data join
+  var text = svg.selectAll("text")
+      .data(data);
+
+  // ENTER
+  text.enter().append("text")
+      .attr("x", function(d, i) { return i * 32; })
+      .attr("dy", ".35em");
+
+  // ENTER + UPDATE
+  text.text(function(d) { return d; });
+
+  // EXIT
+  // Remove old element/word 
+  text.exit().remove();
+}
+
+// Display the function
+// update(randomWord);
+
+setInterval(function() {
+  update(randomWord);
+}, 512);
+
+</script>

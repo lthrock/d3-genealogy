@@ -1,0 +1,69 @@
+<script>
+  function makeSomeMaps() {
+    map = d3.carto.map();
+
+    d3.select("#map").call(map);
+    
+    map.mode("projection");
+
+    var projection = d3.geo.conicEquidistant()
+    .center([-0.0275,51.307])
+    .scale(84000)
+    .translate(map.zoom().translate())
+    .precision(.1);
+
+    map.projection(projection);
+    map.refresh();
+    
+    topojsonLayer = d3.carto.layer();
+    topojsonLayer
+    .type("topojson")
+    .path("glondon.topojson")
+    .label("London Wards")
+    .cssClass("wards")
+    .renderMode("svg")
+    .on("load", colorBySize);
+
+    map.addCartoLayer(topojsonLayer);
+    
+// Function is called on load because it won't have anything to apply to until the layer is loaded
+    function colorBySize() {
+    var featureData = topojsonLayer.features();
+    var sizeExtent = d3.extent(featureData, function (d) {return d.properties.w_size})
+    var sizeScale = d3.scale.quantile().domain(sizeExtent).range(colorbrewer.Greens[5]);
+
+      d3.selectAll("path.wards")
+      .style("fill", function (d) {return sizeScale(d.properties.w_size)})
+    
+    //Some simple hover behavior
+    d3.selectAll("path.wards").style("pointer-events", "auto").on("mouseover", wardOver).on("mouseout", wardOut);
+    
+    function wardOver(d,i) {
+      d3.selectAll("path.wards").style("stroke-width", function (p) {return p.properties.region == d.properties.region ? 0 : 1})
+    }
+
+    function wardOut(d,i) {
+      d3.selectAll("path.wards").style("stroke-width", "1px")
+    }
+
+    }
+
+  }
+</script>
+<body onload="makeSomeMaps()">
+<div id="map"></div>
+<footer>
+<script src="http://d3js.org/d3.v3.min.js" charset="utf-8" type="text/javascript"></script>
+<script src="http://d3js.org/topojson.v1.min.js" type="text/javascript">
+</script>
+<script src="http://d3js.org/d3.geo.projection.v0.min.js" type="text/javascript">
+</script>
+<script src="http://d3js.org/colorbrewer.v1.min.js"></script>
+<script src="http://bl.ocks.org/emeeks/raw/f3105fda25ff785dc5ed/tile.js" type="text/javascript">
+</script>
+<script src="http://bl.ocks.org/emeeks/raw/f3105fda25ff785dc5ed/d3.quadtiles.js" type="text/javascript">
+</script>
+<script src="http://bl.ocks.org/emeeks/raw/f3105fda25ff785dc5ed/d3.geo.raster.js" type="text/javascript">
+</script>
+<script src="https://rawgit.com/emeeks/d3-carto-map/master/d3.carto.map.js" type="text/javascript">
+</script>

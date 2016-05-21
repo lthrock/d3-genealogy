@@ -1,0 +1,58 @@
+<script>
+
+var width = 960,
+    height = 500,
+    rotate = [0,0],
+    graticule = d3.geo.graticule();
+
+var projection = d3.geo.azimuthalEqualArea()
+     .scale(250)
+     .precision(0.3)
+     .clipAngle(180 - 1e-3)
+     .rotate(rotate);
+
+var path = d3.geo.path()
+    .projection(projection);
+
+var drag = d3.behavior.drag()
+    .origin(function() { return {x: rotate[0], y: -rotate[1]}; })
+    .on("drag", function() {
+      rotate[0] = d3.event.x;
+      rotate[1] = -d3.event.y;
+
+      projection.rotate(rotate);
+      path = d3.geo.path().projection(projection);
+      d3.selectAll("path").attr("d", path);
+    });
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height)
+    .call(drag);
+    
+svg.append("defs").append("path")
+    .datum({type: "Sphere"})
+    .attr("id", "sphere")
+    .attr("d", path);
+
+svg.append("use")
+    .attr("class", "stroke")
+    .attr("xlink:href", "#sphere");
+
+svg.append("use")
+    .attr("class", "fill")
+    .attr("xlink:href", "#sphere");
+
+svg.append("path")
+    .datum(graticule)
+    .attr("class", "graticule")
+    .attr("d", path);
+
+d3.json("plate0.json", function(error, plates) {
+  svg.insert("path", ".graticule")
+      .datum(topojson.feature(plates, plates.objects.plates0))
+      .attr("class", "land")
+      .attr("d", path);
+});
+
+</script>

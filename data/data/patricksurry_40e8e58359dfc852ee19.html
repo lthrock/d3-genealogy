@@ -1,0 +1,104 @@
+<script>
+
+var width = 960,
+    height = 500,
+    rotate = 0,        // so that [-60, 0] becomes initial center of projection
+    basescale = width/2/Math.PI; 
+    
+var projection = d3.geo.mercator()
+    .rotate([rotate,0])
+//    .clipAngle(60)    // circle clipping around center of projection via rotate
+//    .center([-60,0])  // this point will get translated to center of the viewport
+    .translate([0.5*width, 0.6*height])
+    .scale(basescale)
+    .precision(0.1);
+
+var path = d3.geo.path()
+    .projection(projection);
+
+var svg = d3.selectAll('body')
+    .append('svg')
+        .attr('width',width)
+        .attr('height',height);
+
+var insets = [
+        {name: 'EDI', longitude: -3.2, latitude: 55.9, zoom: 3,
+            dx: -0.03, dy: -0.05, radius: 0.07*width},
+        {name: 'BOS', longitude: -71.1, latitude: 42.4, zoom: 3,
+            dx: 0.03, dy: 0.03, radius: 0.05*width},
+        {name: 'SIN', longitude: 104, latitude: 1.4, zoom: 3,
+            radius: 0.1*width }
+    ];
+    
+insets.forEach(function(d) { 
+    var xy = projection([d.longitude, d.latitude]);
+    d.x = xy[0] + (d.dx || 0)*width;
+    d.y = xy[1] + (d.dy || 0)*height;
+    d.path = d3.geo.path()
+        .projection(
+            d3.geo.mercator()
+                .rotate([rotate, 0])
+                .center([d.longitude - -rotate, d.latitude])
+                .translate([0,0])
+                .scale(basescale*d.zoom)
+                .precision(0.1)
+            );
+})
+
+
+d3.json("world-50m.json", function ready(error, world) {
+
+    var features = topojson.feature(world, world.objects.countries).features;
+
+    var defs = svg.append('defs');
+    
+    defs.append('filter')
+        .attr('id','blur')
+        .append('feGaussianBlur')
+        .attr('stdDeviation',4);
+    
+    defs.selectAll('clipPath')
+        .data(insets)
+      .enter().append('clipPath')
+        .attr('id', function(d) { return 'clip-inset-' + d.name; })
+        .append('circle')
+        .attr('r', function(d) { return d.radius; });
+
+    // draw a base map    
+    svg.append('g')
+        .classed('basemap', true)
+        .selectAll('path')
+        .data(features)
+      .enter().append('path')
+        .attr('d', path);
+    
+    var g = svg.selectAll('g.insetmap')
+        .data(insets)
+      .enter().append('g')
+        .classed('insetmap', true)
+        .attr('transform', function(d) { 
+            return 'translate(' + [d.x, d.y] + ')'; })
+        .attr('id', function(d) { 
+            return 'inset-' + d.name; })
+        .attr('clip-path', function(d) { 
+            return 'url(#clip-inset-' + d.name + ')' });
+
+    g.append('circle')
+        .classed('background', true)
+        .attr('r', function(d) { return d.radius; });
+        
+    g.selectAll('path')
+        .data(function(d) { return features.map(d.path); })
+      .enter().append('path')
+        .attr('d', function (d) { return d; });
+
+    g.append('circle')
+        .classed('blur', true)
+        .attr('r', function(d) { return d.radius; });
+        
+    g.append('circle')
+        .classed('outline', true)
+        .attr('r', function(d) { return d.radius; });
+        
+});
+</script>

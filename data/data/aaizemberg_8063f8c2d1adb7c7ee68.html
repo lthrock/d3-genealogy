@@ -1,0 +1,28 @@
+<script>
+  var width = 960, height = 500;
+
+  var c20 = d3.scale.category20();
+
+  var vertices = d3.range(20).map(function(d) {
+    return [Math.random() * width, Math.random() * height];
+  });
+
+  var voronoi = d3.geom.voronoi().clipExtent([[0, 0], [width, height]]);
+
+  var svg = d3.select("body").append("svg").attr("width", width).attr("height", height);
+
+  var path = svg.append("g").selectAll("path");
+  path.data(voronoi(vertices)).enter().append("path")
+      .attr("stroke","white") 
+      .attr("fill", c20)
+      .attr("d", function(d) { return "M" + d.join("L") + "Z" } );
+//    .attr("d", polygon);
+
+// function polygon(d) { return "M" + d.join("L") + "Z"; }
+  
+  
+  svg.selectAll("circle").data(vertices).enter().append("circle").attr("r", 2)
+   //.attr("transform", function(d) { return "translate(" + d + ")"; })
+     .attr("cx", function(d) { return d[0]; } )
+     .attr("cy", function(d) { return d[1]; } );
+</script>

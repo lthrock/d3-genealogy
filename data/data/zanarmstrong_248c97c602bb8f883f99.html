@@ -1,0 +1,63 @@
+<script>
+    var margin = {top: 20, right: 25, bottom: 20, left: 25};
+    var width = 100 - margin.left - margin.right;
+    var height = 500 - margin.top - margin.bottom;
+    var svg = d3.select("body").append("svg")
+    	.attr("width", width + margin.left + margin.right)
+     	.attr("height", height + margin.top + margin.bottom)
+    	.append("g")
+      		.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+       
+    // if you add the URL, then when you click on it it will redirect to that URL
+    var bingoBlocks = [
+  		{goal:"data defines color", url: ""},
+  		{goal:"data defines position", url: ""},
+  		{goal:"use circles", url: ""},
+  		{goal:"use rect", url: ""}, 
+  		{goal:"data defines text size", url: ""}, 
+  		{goal:"data defines angle", url: ""}, 
+  		{goal:"use Math.random", url: ""},
+  		{goal:"bar chart, from scratch", url: ""},
+      {goal:"use trig functions", url: ""},
+  		{goal:"freespace!", url: "http://bl.ocks.org/kenpenn/raw/9476266/"},
+  		{goal:"use polygon", url: ""}, 
+  		{goal:"gantt chart, from scratch", url: ""},
+  		{goal:"data defines area", url: ""}, 
+  		{goal:"pie chart, from scratch", url: ""}, 
+  		{goal:"mouse pos defines size", url: ""}, 
+  		{goal:"data defines stroke-width", url: ""},
+  	]
+
+  	var regEx = /(\w+)\/(\w+)/
+
+  	toggleOnClick = function(d, element){
+  		if(d.url)
+  			window.open(d.url, target="_blank")
+  		else
+			d3.select(element).classed("chosen", !d3.select(element).classed("chosen"));
+  	}
+
+    // Feel free to change or delete any of the code you see!
+    var chips = svg.selectAll(".bingoChips")
+    	.data(bingoBlocks)
+    	.enter()
+    		.append("g")
+    		.attr("class", "bingoChips")
+    		.classed("chosen", function(d){
+    			if(d.url != "")
+    				return true
+    		})
+    		.on("click", function(d){toggleOnClick(d, this)})
+    		.attr("transform", function(d, i){return "translate(" + (i % 4)*230 + "," + Math.floor(i / 4)*110 + ")"});
+
+    chips.append("rect")
+        .attr("height", 100)
+        .attr("width", 220)
+        .attr("stroke", "grey")
+        .attr("stroke-width", 2)
+
+    chips.append("text")
+    	.attr({x: 110, y:50})
+    	.text(function(d){return d.goal})
+    
+  </script>

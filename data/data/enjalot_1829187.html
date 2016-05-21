@@ -1,0 +1,34 @@
+<script>
+    var node = document.getElementById('text_node');
+    var bbox = node.getBBox();
+    var computed_text_length = node.getComputedTextLength();
+
+    //Does not work
+    text_node = d3.select('#text_node')
+    text_node.append('tspan')
+        .text('Fly')
+        .attr('dx', '.2em')
+    text_node.append('tspan')
+        .text('you')
+        .attr('dx', '.2em')
+        .attr('dy', '.9em')
+    text_node.append('tspan')
+        .text('fools')
+        .attr('dx', '.2em')
+        .attr('dy', '.9em')
+
+    /*
+    d3.select('#text_node').append('tspan')
+        .text('Fly')
+        .attr('dx', '.2em')
+        .attr('dy', '.9em')
+
+    d3.select('#text_node').append('tspan')
+        .text('you')
+        .attr('dx', '.2em')
+        .attr('dy', '.9em')
+    */
+
+    console.log('BBOX width: ', bbox.width);
+    console.log('Computed text length: ', computed_text_length);
+</script>

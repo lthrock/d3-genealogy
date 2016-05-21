@@ -1,0 +1,105 @@
+<script>
+
+	var w = 600
+	var h = 400
+	var padding = [ 40, 40, 40, 40 ]; //Top, right, bottom, left
+
+	var xScale = d3.scale.linear()
+						.range([ padding[3], w - padding[1] ]);
+
+	var yScale = d3.scale.linear()
+						.range ([ padding[0], h - padding[2] ]);					
+
+	var xAxis = d3.svg.axis()
+					.scale(xScale)
+					.orient("bottom")
+					.ticks(10);
+
+	var yAxis = d3.svg.axis()
+					.scale(yScale)
+					.orient("left")
+					.tickFormat(function(d) {
+						return d + "%";
+					});			
+
+
+	var svg = d3.select("body")
+		.append("svg")
+		.attr("width", w)
+		.attr("height", h);
+
+
+
+	d3.csv("bevolking.csv", function(data) {
+
+			data.sort(function(a,b) {
+				return d3.descending (+a.Population2015, +b.Population2015)
+			});
+
+			xScale.domain([ 
+				d3.min(data, function(d) { return +d.Population2015;
+				}), 
+				d3.max(data, function(d) {return +d.Population2015;
+				}) 
+			]);
+
+			yScale.domain([ 
+				d3.max(data, function(d) { return +d.Growth2015;
+				}), 
+				d3.min(data, function(d) {return +d.Growth2015;
+				}) 
+			]);
+
+	var circles = svg.selectAll("circle")
+					.data(data)
+					.enter()
+					.append("circle");
+
+			circles.attr("class", "circles")
+				.attr("cx", function(d) {
+					return xScale(d.Population2015) - 50;
+				})					
+				.attr("cy", function(d) {
+					return yScale(d.Growth2015) - 100;
+				})
+				.attr("r", 0.1)
+				.attr("fill", "##C1C1C1")
+				.append("title")
+				.text(function(d) {
+					return d.Community + " heeft "  +d.Population2015 + " inwoners en groeit dit jaar met " +d.Growth2015 + "%.";
+				});
+
+			circles.sort(function(a,b) {
+				return d3.ascending(+a.Population2015, +b.Population2015);
+				})
+				.transition()
+				.delay(function(d, i) {
+					return i * 50;
+				})
+				.duration(1500)
+				.attr("r", 5)
+				.attr("opacity", 0.7)
+				.attr("cx", function(d) {
+					return xScale(d.Population2015);
+				})					
+				.attr("cy", function(d) {
+					return yScale(d.Growth2015);
+				});
+
+
+		svg.append("g")
+			.attr("class", "xaxis")
+			.attr("transform", "translate(0," + (h - padding[2]) + ")")
+			.call(xAxis);
+
+		svg.append("g")
+			.attr("class", "yaxis")
+			.attr("transform", "translate(" + (padding[3] - 5) + ",0)")
+			.call(yAxis);
+
+
+
+			
+		});
+
+	</script>

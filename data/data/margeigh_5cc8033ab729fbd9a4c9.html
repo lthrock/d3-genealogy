@@ -1,0 +1,44 @@
+<script>
+    var width = 960;
+    var height = 500;
+
+    var svg = d3.select('svg');
+    
+    for(var i = 0; i < 80; i++) {
+      span = Math.random() * width;
+      
+      var data = {
+        x: Math.random() * span,
+      	y: Math.random() * height,
+      	radius: 2,
+        span: span
+      };
+      
+      // each cicle gets a different span value
+      svg.append('circle')
+      
+      // datum bind a closure of the current variables.
+      		.datum(data);
+    }
+    
+    // new value for width doesn't affect bound data
+    width = 2000000;
+    
+    // the last value from the for loop
+    console.log(data);
+    
+    // mutate the circles' visual appearance
+    svg.select('circle')
+      	.attr('cx', function(jon) {
+      		console.log(jon);
+      		return jon.x;
+    		})
+      	.attr('cy', function(d) {
+      		return d.y;
+    		})
+      	.attr('r', function(d) {
+      		return d.radius;
+    		})
+    
+    console.log(d3.selectAll('circle'));
+  </script>

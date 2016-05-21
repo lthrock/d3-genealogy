@@ -1,0 +1,54 @@
+<script>
+    var margin = {top: 20, right: 10, bottom: 20, left: 10};
+    var width = 960 - margin.left - margin.right;
+    var height = 500 - margin.top - margin.bottom;
+    var svg = d3.select("body").append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+      .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+var dataset = [ 5, 10, 13, 25];
+var w = 400;
+var h = 400;
+    
+d3.xml("star1.xml", "image/svg+xml", function(xml) {	
+  var importedNode = document.importNode(xml.documentElement, true);
+  svg.selectAll("g")
+    .data(dataset)
+    .enter()
+    .append("g")
+    .attr("transform", function(d, i){ 
+        return "translate(" + (i * (w / dataset.length)) + "," 
+            + (h - 80) + ")"
+            +"scale("+ 0.3 +")";
+    })
+    .each(function(d, i){ 
+    	//Add new star
+        var star = this.appendChild(importedNode.cloneNode(true)); 
+        d3.select(star)
+        	.select(".st0")
+        	.style("fill", function() {
+        		if (i % 2 == 0) {
+        			return "blue";
+        		} else {
+        			return "red";
+        		}
+        	})
+    	.on("click", function() {
+    		console.log("Hello There " + i);
+    	})
+        
+        
+        	
+    })
+    .transition()
+    .duration(2000)
+    .attr("transform", function(d, i){ 
+        return "translate(" + (i * (w / dataset.length)) + "," 
+            + (h - d*4 - (w / dataset.length)) + ")"
+            +"scale("+ 0.3 +")";
+    });
+
+});
+  </script>

@@ -1,0 +1,46 @@
+<script>
+
+var width = 960,
+    height = 500,
+    radius = Math.min(width, height) / 2;
+
+var color = d3.scale.category20();
+//ordinal()
+//    .range(["#98abc5", "#8a89a6", "#7b6888", "#6b486b", "#a05d56", "#d0743c", //"#ff8c00"]);
+  
+  var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height)
+  .append("g")
+    .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+  
+ function type(d) {
+  d.count = +d.count;
+  return d;
+}
+  d3.csv("airbnb_neigh_total.csv", type, function(error, data) {
+  if (error) throw error;
+    	var pie = d3.layout.pie().sort(null)
+      						.value(function (d) {
+                     return +d.count;
+                  });
+    
+     console.log(pie(data));
+    
+    var wedge = d3.svg.arc()
+    	.outerRadius(radius - 40)
+    	.innerRadius(0);
+    
+    var g = svg.selectAll('path')
+    		.data(pie(data))
+    	.enter().append('g')
+    		.attr('class', 'arc');
+    
+    g.append('path')
+    	.attr('d', wedge)
+    	.style('fill', function(d) {
+        return color(d.data.neighbourhood_cleansed);
+      });
+    	
+  });
+</script>
