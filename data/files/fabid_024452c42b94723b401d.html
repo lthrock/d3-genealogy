@@ -1,0 +1,130 @@
+<script>
+
+    d3.csv('tweets.csv', function(error, data){
+      var margin = {
+        top: 20,
+        right: 20,
+        bottom: 80,
+        left: 80
+      };
+      var dim = 480;
+      var width = dim - margin.left - margin.right;
+      var height = dim - margin.top - margin.bottom;
+      var format = d3.time.format("%Y-%m-%d %H:%M:%S");
+      var dateAccessor = function (d) {return format.parse(d.date)};
+
+      var timemap = d3.returntimemap()
+      								.values(dateAccessor);
+      
+      var timemapData = timemap(data);
+ 
+      var svg = d3.select('body')
+        .append('svg')
+        .attr('width', dim)
+        .attr('height', dim);
+      
+      var scatter = svg.append('g');
+
+  		var xScale = d3.scale.log();
+  		var yScale = d3.scale.log();
+  
+      timemapData.map
+  		var delta = 1000;
+  		xScale.domain(d3.extent(timemapData, function(d) { return d.x; }))
+        		.range([margin.left, width + margin.left]);
+      
+  		yScale.domain(d3.extent(timemapData, function(d) { return d.y; }))
+        		.range([height, margin.top]);
+      
+      
+      var day = 1000 * 3600 * 24;
+      var minute = 1000 * 60;
+      var xAxis = d3.svg.axis()
+    		.scale(xScale)
+    		.orient("bottom")
+      	.innerTickSize([10])
+        .outerTickSize([1])
+      	.tickValues([4 * minute, 60 * 8 * minute, 14 * day])
+      	.tickFormat(function(d){return moment.duration(d).humanize()});
+      var yAxis = d3.svg.axis()
+    		.scale(yScale)
+    		.orient("left")
+      	.innerTickSize([10])
+        .outerTickSize([1])
+      	.tickValues([4 * minute, 60 * 8 * minute, 14 * day])
+      	.tickFormat(function(d){return moment.duration(d).humanize()});
+      svg.append("g")
+    		.attr("class", "x axis")
+    		.attr("transform", "translate(0," + (height) + ")")
+    		.call(xAxis);
+      svg.append("g")
+      	.attr("class", "y axis")
+      	.attr("transform", "translate(" + margin.left + ",0)")
+      	.call(yAxis);
+      scatter.selectAll('circle').data(timemapData).enter()
+        .append('circle')
+        .attr('r', 3)
+        .style('fill', 'black')
+        .style('fill-opacity', 0.6)
+        .attr('cx', function(d) {return xScale(d.x)})
+        .attr('cy', function(d) {return yScale(d.y)});
+
+			svg.append("text")
+            .attr("text-anchor", "middle")
+            .attr("transform", "translate("+ (margin.left/5) +","+(3*height/4)+")rotate(-90)")
+      			.style('font-family', 'sans-serif')
+            .text("Time after event");
+      svg.append("text")
+            .attr("text-anchor", "middle")
+            .attr("transform", "translate("+ (width/2) +","+(height + margin.top + margin.bottom/2)+")")
+      			.style('font-family', 'sans-serif')
+            .text("Time before event"); 
+           
+      var size = 5;
+      var heatmap = d3.heatmap()
+        .std(2)
+      	.x(function(d) { return xScale(d.x); })
+        .y(function(d) { return yScale(d.y); })
+        .dx(size)
+        .dy(size);
+      
+      // the result of the heatmap layout
+      var heatmapData = heatmap(timemapData);
+
+      var color = d3.scale.linear()
+        .domain([0, d3.max(heatmapData, function(d) {
+          return d.v;
+        })])
+        .range(["white", "steelblue"])
+        .interpolate(d3.interpolateLab);
+      
+      var svg2 = d3.select('body')
+        .append('svg')
+        .attr('width', size)
+        .attr('height', size);
+			svg2.append("g")
+    		.attr("class", "x axis")
+    		.attr("transform", "translate(0," + (height) + ")")
+    		.call(xAxis);
+      svg2.append("g")
+      	.attr("class", "y axis")
+      	.attr("transform", "translate(" + margin.left + ",0)")
+      	.call(yAxis);
+      svg2.append("g")
+        .selectAll(".square")
+        .data(heatmapData)
+        .enter().append("rect")
+         .attr("class", "square")
+        .attr("x", function(d) { return d.x; })
+        .attr("y", function(d) { return d.y - size; })    
+        .attr("width", size)
+        .attr("height", size)
+        .style("fill", function(d) {
+          return color(d.v)
+        })
+        .style("stroke", "none");
+
+      
+      
+    })
+  </script>

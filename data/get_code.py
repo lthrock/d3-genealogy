@@ -23,7 +23,9 @@ def main(argv):
     json_data.close()
 
   code_array = d["hits"]["hits"]
-
+  
+  output_json = []
+  
   for element in code_array:
     gistid = element["_id"]
     e = element["_source"]
@@ -32,16 +34,22 @@ def main(argv):
     
     code = get_js_only(code)
     if(code != None): 
-      filename = author + '_' + gistid + '.html'
+      filename = 'data/' + author + '_' + gistid + '.html'
       outfile = open(filename, 'w')
       outfile.write(code)
-  
-#  print e["created_at"]
-#  print e["updated_at"]
-#  print e["api"]
-#  print e["readme"]
-#  print e["description"]
+      simple_e = {}
+      simple_e["created_at"] = e["created_at"]
+      simple_e["updated_at"] = e["updated_at"]
+      simple_e["api"] = e["api"]
+      simple_e["readme"] = e["readme"]
+      simple_e["description"] = e["description"]
+      output_json.append(simple_e)
+    
+    print output_json
 
+  with open('data.json', 'w') as datafile:
+    json.dump(output_json, datafile)
+    
 def get_js_only(code):
   re.DOTALL
   re.MULTILINE
@@ -50,7 +58,6 @@ def get_js_only(code):
     return match.group(0)
   else:
     return None
-  
   
 if __name__ == "__main__":
    main(sys.argv[1:])
