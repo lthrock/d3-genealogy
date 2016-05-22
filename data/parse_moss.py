@@ -21,7 +21,6 @@ def main(argv):
         file2_author = file2_data[0]
 
         if(file1_author <> file2_author):
-          print "NOT SAME"
           e = {}
           e["source"] = file1_id
           e["target"] = file2_id
