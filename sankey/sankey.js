@@ -3,6 +3,7 @@ d3.sankey = function() {
       nodeWidth = 24,
       nodePadding = 8,
       size = [1, 1],
+      topMargin = 0,
       nodes = [],
       links = [];
  
@@ -17,6 +18,12 @@ d3.sankey = function() {
     nodePadding = +_;
     return sankey;
   };
+
+  sankey.topMargin = function(_) {
+    if (!arguments.length) return topMargin;
+    topMargin = +_;
+    return sankey;
+  }
  
   sankey.nodes = function(_) {
     if (!arguments.length) return nodes;
@@ -220,7 +227,7 @@ d3.sankey = function() {
       nodesByBreadth.forEach(function(nodes) {
         var node,
             dy,
-            y0 = 0,
+            y0 = topMargin,
             n = nodes.length,
             i;
  
@@ -242,7 +249,7 @@ d3.sankey = function() {
           for (i = n - 2; i >= 0; --i) {
             node = nodes[i];
             dy = node.y + node.dy + nodePadding - y0;
-            if (dy > 0) node.y -= dy;
+            if (dy > 0) node.y = Math.max(topMargin, node.y - dy);
             y0 = node.y;
           }
         }

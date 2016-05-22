@@ -23,6 +23,25 @@
 .link:hover {
   stroke-opacity: .5;
 }
+
+.axis line, .axis path {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.domain {
+  opacity: 0.4;
+}
+
+.x {  
+  opacity: 0.6;
+}
+
+.axis text {
+    text-shadow: 0 1px 0 #fff;
+    cursor: move;
+}
  
 </style>
 <body>
@@ -53,9 +72,10 @@ var svg = d3.select("#chart").append("svg")
  
 // Set the sankey diagram properties
 var sankey = d3.sankey()
-    .nodeWidth(36)
+    .nodeWidth(20)
     .nodePadding(10)
-    .size([width, height]);
+    .size([width, height-margin.top])
+    .topMargin(3 * margin.top);
  
 var path = sankey.link();
  
@@ -89,8 +109,8 @@ d3.json("force-layout.json", function(graph) {
 // add the link titles
   link.append("title")
         .text(function(d) {
-        return d.source.uid + " → " + 
-                d.target.uid + "\n" + format(d.value); });
+        return d.source.description + " → " + 
+                d.target.description + "\n" + format(d.value); });
  
 // add in the nodes
   var node = svg.append("g").selectAll(".node")
@@ -126,7 +146,7 @@ d3.json("force-layout.json", function(graph) {
       .attr("dy", ".35em")
       .attr("text-anchor", "end")
       .attr("transform", null)
-      .text(function(d) { return d.uid; })
+      .text(function(d) { return d.description; })
     .filter(function(d) { return d.x < width / 2; })
       .attr("x", 6 + sankey.nodeWidth())
       .attr("text-anchor", "start");
@@ -153,7 +173,6 @@ d3.json("force-layout.json", function(graph) {
     }).created_at);
   };
 
-  console.log(sankey.nodes());
   var startDate = sankey.nodes().minDate();
   var endDate = sankey.nodes().maxDate();
 
@@ -167,19 +186,69 @@ d3.json("force-layout.json", function(graph) {
     var newX = (stringToDate(d.created_at).getTime() - startDate.getTime())  / timeToSizeRatio;
   
     d3.select('#node_' + d.uid).attr("transform", 
-        "translate(" + (d.x = newX) + "," + (d.y = d.y) + ")");
+        "translate(" + (d.x = newX) + "," + (d.y = Math.max(margin.top, Math.min(d.y))) + ")");
     sankey.relayout();
     link.attr("d", path);
-    // sankey.link()
     return newX;
   });
+
+// vertical gridlines / x axis 
+  var xScale = d3.time.scale()
+        .domain([startDate, endDate])
+        .range([0, width]);
+
+  var xAxis = d3.svg.axis()
+        .orient("top")
+        // to change format: https://github.com/d3/d3/wiki/Time-Formatting
+        .tickFormat(d3.time.format('%m/%y')) 
+        .scale(xScale);
+
+  svg.append("g")
+        .attr("transform", "translate(0," + 20 + ")")
+        .call(xAxis);
+
+  svg.selectAll(".xAxis text")
+        .attr("transform", function(d) {
+            return "translate(" + this.getBBox().height*-2 + "," + this.getBBox().height + ")rotate(-45)";
+        })
+
+  svg.selectAll("line.x")
+        .data(xScale.ticks(8))
+        .enter().append("line")
+        .attr("class", "x")
+        .attr("x1", xScale)
+        .attr("x2", xScale)
+        .attr("y1", 0)
+        .attr("y2", height)
+        .style("stroke", "#ccc");
+
+
+
+// add in vertical grid lines
+  // var xScale = d3.time.scale()
+  //     .domain([startDate, d3.time.day.offset(endDate), 1])
+  //     .rangeRound([0, width]);
+
+  // var xAxis = d3.svg.axis()
+  //     .scale(xScale)
+  //     .orient("bottom")
+  //     .tickFormat(d3.time.format('%a %d'))
+  //     .ticks(d3.time.days, 1)
+  //     .innerTickSize(-height)
+  //     .outerTickSize(0)
+  //     .tickPadding(10);
+
+  // svg.append("g")
+  //     .attr("class", "x axis")
+  //     .attr("transform", "translate(0," + height + ")")
+  //     .call(xAxis)
 
  
 // the function for moving the nodes
   function dragmove(d) {
     d3.select(this).attr("transform", 
         "translate(" + (
-             d.x = Math.max(0, Math.min(width - d.dx, d3.event.x))
+             d.x = d.x
           ) + "," + (
                    d.y = Math.max(0, Math.min(height - d.dy, d3.event.y))
             ) + ")");
