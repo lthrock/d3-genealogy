@@ -86,7 +86,7 @@ var sankey = d3.sankey()
 var path = sankey.link();
  
 // load the data
-d3.json("135-links.json", function(graph) {
+d3.json("2k-links-modified.json", function(graph) {
  
     var nodeMap = {};
     graph.nodes.forEach(function(x) { nodeMap[x.uid] = x; });
@@ -276,6 +276,7 @@ d3.json("135-links.json", function(graph) {
   var parent = $("#detail-parent");
   var child = $("#detail-child");
 
+// hard coded dummy data
   var TEMP_SOURCE_CODE = "1 no\n2 yes\n3 yes\n4 yes\n5 yes\n6 yes\n7 no\n8 no\n9 yes\n10 yes\n11 yes\n12 no";
   var TEMP_TARGET_CODE = "1 no\n2 no\n3 no\n4 no\n5 no\n6 yes\n7 yes\n8 yes\n9 yes\n10 yes\n11 no\n12 no\n13 yes\n14 yes\n15 yes\n16 no\n17 no\n";
 
@@ -287,14 +288,17 @@ d3.json("135-links.json", function(graph) {
 
   var TEMP_EDGE = {
     "source": {
-      "code": TEMP_SOURCE_CODE
+      "code": TEMP_SOURCE_CODE,
+      "created_at": "Date_B"
     },
     "target": {
-      "code": TEMP_TARGET_CODE
+      "code": TEMP_TARGET_CODE,
+      "created_at": "Date_A"
     },
     "matches": TEMP_CODE_MATCH
   }
 
+  // Outputs html for code, highlighting matches in red.
   function generateCodeHtml(lines, startDivs, endDivs) {
     var emptySpan = "<span> </span>"
     var newHtml = $("<div class='full-width'> </div>");
@@ -319,12 +323,13 @@ d3.json("135-links.json", function(graph) {
     return newHtml;
   }
 
+  // updates the code snippets in the code comparison card
   function updateCode(link) {
-    var source = link.source;
-    var target = link.target;
+    var parentNode = link.source;
+    var childNode = link.target;
 
-    var sourceLines = source.code.split(/\n/);
-    var targetLines = target.code.split(/\n/);
+    var sourceLines = parentNode.code.split(/\n/);
+    var targetLines = childNode.code.split(/\n/);
     var newSourceStartDivs = {};
     var newSourceEndDivs = {};
     var newTargetStartDivs = {};
@@ -346,13 +351,29 @@ d3.json("135-links.json", function(graph) {
     child.find(".code-snippet").html(generateCodeHtml(targetLines, newTargetStartDivs, newTargetEndDivs));
   }
 
+  // swaps source and target if an edge is in the wrong order
+  function ensureLinkIsDirected(link) {
+    var source = link.source;
+    var target = link.target;
+
+    if (link.source.created_at > link.target.created_at) {
+      console.log("swapping");
+      var temp = link.source;
+      link.source = link.target;
+      link.target = temp;
+    }
+  }
+
+  // updates the code comparison card for a given edge.
   function showEdgeInfo(link) {
+    ensureLinkIsDirected(link);
     var parentNode = link.source;
+    var childNode = link.target;
+
     parent.find(".snippet-name").text(parentNode.description)
     parent.find(".author").text(parentNode.uid)
     parent.find(".created-date").text(parentNode.created_at)
 
-    var childNode = link.target;
     child.find(".snippet-name").text(childNode.description)
     child.find(".author").text(childNode.uid)
     child.find(".created-date").text(childNode.created_at)
@@ -361,6 +382,7 @@ d3.json("135-links.json", function(graph) {
     updateCode(TEMP_EDGE);
   }
 
+  // highlight a specific code match (on hover) using hoveree's class
   function highlight(e) {
     var matchingLines = $("." + e.currentTarget.className.split(" ").join("."));
 
@@ -369,6 +391,7 @@ d3.json("135-links.json", function(graph) {
     })
   }
 
+  // remove highlight after hover ends
   function removeHighlight(e) {
     var matchingLines = $("." + e.currentTarget.className.split(" ").join("."));
 
