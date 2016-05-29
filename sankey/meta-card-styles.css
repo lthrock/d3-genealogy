@@ -1,0 +1,43 @@
+#meta-card {
+	width: 98%;
+	height: auto;
+
+	border-color: #555;
+	border-width: 2px;
+	border-style: solid;
+	border-radius: 4px;
+
+	margin: 10px;
+	padding: 20px;
+	color: black;
+}
+
+#meta-card .code-snippet {
+	font-family: "Courier New";
+}
+
+#meta-card .code-snippet .matched {
+	color: blue;
+}
+
+#meta-card .snippet-name {
+	margin-left: 60px;
+	margin-right: 60px
+}
+
+#meta-card .author {
+
+}
+
+#meta-card .created-date {
+
+}
+
+#meta-card .match {
+	color: red;
+	width: 100%;
+}
+
+#meta-card .full-width {
+	width: 100%;
+}
