@@ -170,12 +170,12 @@ $userid=111984770;
 # Process the command line options.  This is done in a non-standard
 # way to allow multiple -b's.
 #
-$opt_l = "c";   # default language is c
-$opt_m = 10;
+$opt_l = "javascript";   # default language is javascript
+$opt_m = 1000;
 $opt_d = 0;
 $opt_x = 0;
 $opt_c = "";
-$opt_n = 250;
+$opt_n = 4000;
 $bindex = 0;    # this becomes non-zero if we have any base files
 
 while (@ARGV && ($_ = $ARGV[0]) =~ /^-(.)(.*)/) {
