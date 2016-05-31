@@ -1,6 +1,6 @@
 #meta-card {
 	width: 98%;
-	height: auto;
+	max-height: 600px;
 
 	border-color: #555;
 	border-width: 2px;
@@ -14,6 +14,8 @@
 
 #meta-card .code-snippet {
 	font-family: "Courier New";
+	max-height: 450px;
+	overflow: auto;
 }
 
 #meta-card .code-snippet .matched {
@@ -22,7 +24,7 @@
 
 #meta-card .snippet-name {
 	margin-left: 60px;
-	margin-right: 60px
+	margin-right: 60px;
 }
 
 #meta-card .author {
