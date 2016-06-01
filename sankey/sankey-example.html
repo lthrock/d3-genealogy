@@ -61,7 +61,7 @@
 <script>
   
 var units = "Widgets";
- 
+
 var margin = {top: 10, right: 10, bottom: 10, left: 10},
     width = 1200 - margin.left - margin.right,
     height = 600 - margin.top - margin.bottom;
@@ -130,7 +130,7 @@ d3.json("force-layout.json", function(graph) {
     link.remove();
     node.remove();
     d3.selectAll(".tick").remove();
-    xAxisLines.remove();
+    d3.selectAll(".x.axis").remove();
     drawVisualization(graph);
   })
 
@@ -216,7 +216,7 @@ d3.json("force-layout.json", function(graph) {
       node.remove();
       d3.selectAll(".tick").remove();
       $(".tipsy").remove()
-      xAxisLines.remove();
+      d3.select(".x.axis").remove();
       drawVisualization(newGraph);
     });
 
@@ -262,59 +262,72 @@ d3.json("force-layout.json", function(graph) {
   recurseOnLinks(d.targetLinks);
  }
 
-  /* Add timeline and move nodes to timeline position. */
-  function drawTimeline() {
-    var startDate = sankey.nodes().minDate();
-    var endDate = sankey.nodes().maxDate();
-
+/* Draw grids everytime we zoom the axes */
+function redrawAxes(xScale) {
+  xAxisTicks = svg.selectAll(".tick line")
+    .attr("y1", 0)
+    .attr("y2", height)
+    .style("stroke", "#ccc");
+  
+  var startDate = sankey.nodes().minDate();
+  var endDate = sankey.nodes().maxDate();
+  
     // find ms : px ratio
-    var timeDiff = Math.abs(startDate.getTime() - endDate.getTime());
-    var screenWidth = width - sankey.nodeWidth();
-    var timeToSizeRatio = timeDiff / screenWidth;
-
-    var newCoordinates = sankey.nodes().map(function(d) {
-      var oldX = d.x;
-      var newX = (stringToDate(d.created_at).getTime() - startDate.getTime())  / timeToSizeRatio;
+  var timeDiff = Math.abs(startDate.getTime() - endDate.getTime());
+  var screenWidth = width - sankey.nodeWidth();
+  var timeToSizeRatio = timeDiff / screenWidth;
+  
+  var newCoordinates = sankey.nodes().map(function(d) {
+    var newX = xScale(stringToDate(d.created_at).getTime());
     
-      d3.select('#node_' + d.uid).attr("transform", 
-          "translate(" + (d.x = newX) + "," + (d.y = Math.max(margin.top + 30, Math.min(d.y))) + ")");
-      sankey.relayout();
-      link.attr("d", path);
-      return newX;
-    });
+    d3.select('#node_' + d.uid).attr("transform", 
+        "translate(" + (d.x = newX) + "," + (d.y = Math.max(margin.top + 30, Math.min(d.y))) + ")");
+    sankey.relayout();
+    link.attr("d", path);
+    return newX;
+  });
+}
+  
+/* Add timeline and move nodes to timeline position. */
+function drawTimeline() {
+  var startDate = sankey.nodes().minDate();
+  var endDate = sankey.nodes().maxDate();
 
-  // vertical gridlines / x axis 
-    var xScale = d3.time.scale()
-          .domain([startDate, endDate])
-          .range([0, width]);
+// vertical gridlines / x axis 
+  var xScale = d3.time.scale()
+        .domain([startDate, endDate])
+        .range([0, width]);
 
-    var xAxis = d3.svg.axis()
-          .orient("top")
-          // to change format: https://github.com/d3/d3/wiki/Time-Formatting
-          .tickFormat(d3.time.format('%m/%y')) 
-          .scale(xScale);
+  var xAxis = d3.svg.axis()
+        .orient("top")
+        // to change format: https://github.com/d3/d3/wiki/Time-Formatting
+        .tickFormat(d3.time.format('%m/%y')) 
+        .scale(xScale)
 
-    svg.append("g")
-          .attr("transform", "translate(0," + 20 + ")")
-          .call(xAxis);
+  svg.append("g")
+    .attr("transform", "translate(0," + 20 + ")")
+    .attr("class", "x axis")
+    .call(xAxis);
 
-    xAxisLabels = svg.selectAll(".xAxis text")
-          .attr("transform", function(d) {
-              return "translate(" + this.getBBox().height*-2 + "," + this.getBBox().height + ")rotate(-45)";
-          })
+  xAxisLabels = svg.selectAll(".xAxis text")
+    .attr("transform", function(d) {
+        return "translate(" + this.getBBox().height*-2 + "," + this.getBBox().height + ")rotate(-45)";
+    })
 
-    xAxisLines = svg.selectAll("line.x")
-          .data(xScale.ticks(8))
-          .enter().append("line")
-          .attr("class", "x")
-          .attr("x1", xScale)
-          .attr("x2", xScale)
-          .attr("y1", 0)
-          .attr("y2", height)
-          .style("stroke", "#ccc");
+  draw = function() {
+    svg.select(".x.axis").call(xAxis);
+    redrawAxes(xScale);
   }
 
+  var zoom = d3.behavior.zoom()
+  .x(xScale)
+  .scaleExtent([1, 32])
+  .on("zoom", draw);
 
+  redrawAxes(xScale);
+
+  d3.select("#chart").select("svg").call(zoom);
+}
  
 // the function for moving the nodes
   function dragmove(d) {
