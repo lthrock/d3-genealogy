@@ -50,14 +50,14 @@
  
 <p id="chart">
  
-<link href="tipsy.css" rel="stylesheet" type="text/css" />
-<link href="callout-styles.css" rel="stylesheet" type="text/css" />
-<link href="meta-card-styles.css" rel="stylesheet" type="text/css" />
+<link href="css/tipsy.css" rel="stylesheet" type="text/css" />
+<link href="css/callout-styles.css" rel="stylesheet" type="text/css" />
+<link href="css/meta-card-styles.css" rel="stylesheet" type="text/css" />
 <link href="bootstrap-3.3.6-dist/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
 <script src="http://d3js.org/d3.v3.js"></script>
-<script src="sankey.js"></script>
+<script src="js/sankey.js"></script>
 <script type="text/javascript" src="http://code.jquery.com/jquery-1.6.2.min.js"></script>
-<script type="text/javascript" src="jquery.tipsy.js"></script>
+<script type="text/javascript" src="js/jquery.tipsy.js"></script>
 <script>
   
 var units = "Widgets";
@@ -106,7 +106,7 @@ function linkUID(link) {
  }
 
 // load the data
-d3.json("force-layout.json", function(graph) {
+d3.json("data/force-layout.json", function(graph) {
  
     var nodeMap = {};
     var linkMap = {};
