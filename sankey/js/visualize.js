@@ -37,7 +37,6 @@ Array.prototype.minDate = function() {
     return stringToDate(p.created_at) < stringToDate(v.created_at) ? p : v;
   }).created_at);
 };
- 
 
 function linkUID(link) {
   return link.source.uid + "," + link.target.uid;

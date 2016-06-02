@@ -3,7 +3,8 @@
 import json, sys, getopt, re, csv, os
 
 def main(argv):
-  mossfile = argv[0]
+  mossfile = "main_moss_output_" + argv[0] + ".csv"
+  detailfile = "detail_moss_output_" + argv[0] + ".csv"
   outfile = "links.json"
   links = []
   with open(mossfile) as moss_data: 
@@ -26,9 +27,30 @@ def main(argv):
           e["target"] = file2_id
           # lines matched
           e["value"] = int(row[5])
+          e["links"] = []
+          print e
           links.append(e)
       
     print len(links)
+    
+    with open(detailfile) as detailed_data:
+      detailed_reader = csv.reader(detailed_data, delimiter=',')
+      headers = next(detailed_reader, None)
+      for row in detailed_reader:
+        source = os.path.splitext(os.path.split(row[0])[1])[0]
+        target = os.path.splitext(os.path.split(row[4])[1])[0]
+        e = next((x for x in links if x["source"]==source and x["target"] == target), None)
+        if(e):
+          print e
+          copy = {}
+          copy["source_confidence"] = int(row[1])
+          copy["source_start_line"] = int(row[2])
+          copy["source_end_line"] = int(row[3])
+          copy["target_confidence"] = int(row[5])
+          copy["target_start_line"] = int(row[6])
+          copy["target_end_line"] = int(row[7])
+          e["links"].append(copy)
+          print e
     with open('links.json', 'w') as linksfile:
       json.dump(links, linksfile)  
 if __name__ == "__main__":

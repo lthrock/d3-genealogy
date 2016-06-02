@@ -32,6 +32,7 @@ def main(argv):
       simple_e["api"] = e["api"]
       simple_e["readme"] = e["readme"]
       simple_e["description"] = e["description"]
+      simple_e["code"] = e["code"]
       output_json.append(simple_e)
     
     
