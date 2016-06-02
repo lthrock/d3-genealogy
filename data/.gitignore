@@ -1,6 +1,0 @@
-data/*
-*.csv
-6k-raw-snippets.json
-nodes.json
-links.json
-nodes-clean.json
