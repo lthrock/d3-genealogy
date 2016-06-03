@@ -63,6 +63,7 @@ def main(argv):
   detailfile = "detail_moss_output_" + argv[0] + ".csv"
   outfile = "links.json"
   getLinks(mossfile)  
+  getDetails(detailfile)
   with open('links.json', 'w') as linksfile:
     json.dump(links, linksfile) 
     
