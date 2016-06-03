@@ -6,8 +6,6 @@ import re
 import csv
 import sys
 
-
-
 def main(argv):
   idNumber = argv[0]
   # CSV output file
