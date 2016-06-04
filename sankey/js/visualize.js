@@ -47,6 +47,11 @@ function authorFilter(node, params) {
   return node.uid.startsWith(params[0] + "_"); 
 }
 
+// params[0] -> api name
+function apiFilter(node, params) {
+  return node.api.includes(params[0]); 
+}
+
 var displayedGraph;
 
 // load the data
@@ -77,9 +82,9 @@ d3.json("data/force-layout.json", function(graph) {
     d3.selectAll(".tick").remove();
     d3.selectAll(".x.axis").remove();
     drawVisualization(graph);
-  })
+  });
 
-  var authorTextField = $(".authorFilter")
+  var authorTextField = $(".authorFilter");
   authorTextField.keypress(function(e) { 
     e = e || window.event;
     var charCode = e.keyCode || e.which;
@@ -87,7 +92,7 @@ d3.json("data/force-layout.json", function(graph) {
     if (charCode == 13) {
       e.preventDefault();
       var author = authorTextField.val();
-      filterTrees(displayedGraph, authorFilter, [author]);
+      applyFilter(displayedGraph, authorFilter, [author]);
     } else {
       // Potential TODO: filter as people type every character?
       //     Only reason this is hard is because, when people backspace,
@@ -98,9 +103,23 @@ d3.json("data/force-layout.json", function(graph) {
       // console.log("here");
       // var author = authorTextField.val();
       // var charStr = String.fromCharCode(charCode);
-      // filterTrees(displayedGraph, authorFilter, [author + charStr]);
+      // applyFilter(displayedGraph, authorFilter, [author + charStr]);
     }
-  })
+  });  
+
+  var apiTextField = $(".apiFilter");
+  apiTextField.keypress(function(e) { 
+    e = e || window.event;
+    var charCode = e.keyCode || e.which;
+
+    if (charCode == 13) {
+      e.preventDefault();
+      var api = apiTextField.val();
+      applyFilter(displayedGraph, apiFilter, [api]);
+    } else {
+      // Potential TODO: see author filter
+    }
+  }) 
 
   function getValueRange(graph) {
     var minLinkValue = -1;
@@ -210,10 +229,6 @@ d3.json("data/force-layout.json", function(graph) {
       drawVisualization(newGraph);
     });
 
-    // node.on('mouseout', function(d) {
-    //   var nodeSelection = d3.select(this).select('#text_' + d.uid).style("visibility", "hidden");
-    // });
-
     // Tooltips
     $("svg circle").tipsy({
       gravity: 'w',
@@ -225,21 +240,25 @@ d3.json("data/force-layout.json", function(graph) {
             "<span class='attr-name'> NAME: </span>" + d.description +
             "<br>\
             <span class='attr-name'> AUTHOR: </span>" + d.uid.substring(0, d.uid.lastIndexOf("_")) + "<br>\
-            <span class='attr-name'> DATE: </span>" + d.created_at +
+            <span class='attr-name'> DATE: </span>" + d.created_at + "<br>\
+            <span class=attr-name'> APIs: </span><br>\
+                  &nbsp&nbsp" + d.api.join("<br>&nbsp&nbsp") + 
           "</span>"
         );
       }
     });
   }
 
-  function getSubgraph(d, nodes, edges) {
+  function getSubgraph(d, nodes, edges, params, filterFunction=function() { return true }) {
     if (nodes.has(d.uid)) return;
     nodes.add(d.uid);
 
     function recurseOnLinks(links) {
       links.forEach(function(x) { 
         var edgeID = linkUID(x);
-        if (!edges.has(edgeID)) {
+        if (!edges.has(edgeID) 
+                && filterFunction(x.source, params) 
+                && filterFunction(x.target, params)) {
           edges.add(edgeID);
           getSubgraph(x.source, nodes, edges);
           getSubgraph(x.target, nodes, edges);
@@ -251,7 +270,8 @@ d3.json("data/force-layout.json", function(graph) {
     recurseOnLinks(d.targetLinks);
   }
 
-  function filterTrees(unfilteredGraph, filterFunction, params) {
+  // isNodeFilter means all nodes must match filter criteria. Otherwise, only one node in a tree must match for the tree to be shown.
+  function applyFilter(unfilteredGraph, filterFunction, params, isNodeFilter=false) {
     var nodesToCheck = new Map();
     unfilteredGraph.nodes.forEach(function(node) {
       nodesToCheck.set(node.uid, node);
@@ -264,7 +284,11 @@ d3.json("data/force-layout.json", function(graph) {
         if (filterFunction(value, params)) {
           var visitedNodes = new Set();
           var traversedEdges = new Set();
-          getSubgraph(value, visitedNodes, traversedEdges);
+          if (isNodeFilter) {
+            getSubgraph(value, visitedNodes, traversedEdges, params, filterFunction);
+          } else {
+            getSubgraph(value, visitedNodes, traversedEdges);
+          }
 
           nodesArray = Array.from(visitedNodes);
           edgesArray = Array.from(traversedEdges);
@@ -297,8 +321,8 @@ d3.json("data/force-layout.json", function(graph) {
   }
 
   function clearVisualization() {
-    link.remove();
     node.remove();
+    link.remove();
     d3.selectAll(".tick").remove();
     $(".tipsy").remove()
     d3.select(".x.axis").remove();
