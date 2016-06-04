@@ -26,10 +26,6 @@ function stringToDate(str) {
   return new Date(Date.parse(str));
 }
 
-// var savedCoordinates = sankey.nodes().map(function(d) {
-//   return { x : d.x, y : d.y}
-// });
-
 Array.prototype.maxDate = function() {
   return stringToDate(this.reduce(function (p, v) {
     return stringToDate(p.created_at) > stringToDate(v.created_at) ? p : v;
@@ -44,7 +40,14 @@ Array.prototype.minDate = function() {
 
 function linkUID(link) {
   return link.source.uid + "," + link.target.uid;
- }
+}
+
+// params[0] -> author
+function authorFilter(node, params) {
+  return node.uid.startsWith(params[0] + "_"); 
+}
+
+var displayedGraph;
 
 // load the data
 d3.json("data/force-layout.json", function(graph) {
@@ -76,6 +79,29 @@ d3.json("data/force-layout.json", function(graph) {
     drawVisualization(graph);
   })
 
+  var authorTextField = $(".authorFilter")
+  authorTextField.keypress(function(e) { 
+    e = e || window.event;
+    var charCode = e.keyCode || e.which;
+
+    if (charCode == 13) {
+      e.preventDefault();
+      var author = authorTextField.val();
+      filterTrees(displayedGraph, authorFilter, [author]);
+    } else {
+      // Potential TODO: filter as people type every character?
+      //     Only reason this is hard is because, when people backspace,
+      //     we need a stack of states for them to go back to the previous 
+      //     visualization. And then suddenly we have to deal with copy/paste, 
+      //     etc.
+
+      // console.log("here");
+      // var author = authorTextField.val();
+      // var charStr = String.fromCharCode(charCode);
+      // filterTrees(displayedGraph, authorFilter, [author + charStr]);
+    }
+  })
+
   function getValueRange(graph) {
     var minLinkValue = -1;
     var maxLinkValue = -1;
@@ -91,6 +117,7 @@ d3.json("data/force-layout.json", function(graph) {
   }
 
   function drawVisualization(currGraph) {
+    displayedGraph = currGraph;
     drawSankey(currGraph);
     drawTimeline();
   }   
@@ -137,7 +164,7 @@ d3.json("data/force-layout.json", function(graph) {
           return d.source.description + " → " + 
                   d.target.description + "\n" + format(d.value); 
           });
-   
+
     // add in the nodes
     node = svg.append("g").selectAll(".node")
         .data(currGraph.nodes)
@@ -145,8 +172,8 @@ d3.json("data/force-layout.json", function(graph) {
         .attr("class", "node")
         .attr("id", function(d) { return "node_" + d.uid} )
         .attr("created_at", function(d) { return d.created_at; })
-        .attr("transform", function(d) { 
-        return "translate(" + d.x + "," + d.y + ")"; })
+        .attr("transform", function(d) {
+          return "translate(" + d.x + "," + d.y + ")"; })
       .call(d3.behavior.drag()
         .origin(function(d) { return d; })
         .on("dragstart", function() { 
@@ -179,11 +206,7 @@ d3.json("data/force-layout.json", function(graph) {
         links: edgesArray.map( function(x) { return linkMap[x] })
       };
 
-      link.remove();
-      node.remove();
-      d3.selectAll(".tick").remove();
-      $(".tipsy").remove()
-      d3.select(".x.axis").remove();
+      clearVisualization();
       drawVisualization(newGraph);
     });
 
@@ -200,35 +223,86 @@ d3.json("data/force-layout.json", function(graph) {
         return (
           "<span class='callout-text'>" + 
             "<span class='attr-name'> NAME: </span>" + d.description +
-            "<br><br>\
+            "<br>\
+            <span class='attr-name'> AUTHOR: </span>" + d.uid.substring(0, d.uid.lastIndexOf("_")) + "<br>\
             <span class='attr-name'> DATE: </span>" + d.created_at +
-            "<span class='attr-name'> DATE: </span>\
-            hello" + 
           "</span>"
         );
       }
     });
- }
-
- function getSubgraph(d, nodes, edges) {
-  if (nodes.has(d.uid)) return;
-
-  nodes.add(d.uid);
-
-  function recurseOnLinks(links) {
-    links.forEach(function(x) { 
-      var edgeID = linkUID(x);
-      if (!edges.has(edgeID)) {
-        edges.add(edgeID);
-        getSubgraph(x.source, nodes, edges);
-        getSubgraph(x.target, nodes, edges);
-      }
-    });
   }
 
-  recurseOnLinks(d.sourceLinks);
-  recurseOnLinks(d.targetLinks);
- }
+  function getSubgraph(d, nodes, edges) {
+    if (nodes.has(d.uid)) return;
+    nodes.add(d.uid);
+
+    function recurseOnLinks(links) {
+      links.forEach(function(x) { 
+        var edgeID = linkUID(x);
+        if (!edges.has(edgeID)) {
+          edges.add(edgeID);
+          getSubgraph(x.source, nodes, edges);
+          getSubgraph(x.target, nodes, edges);
+        }
+      });
+    }
+
+    recurseOnLinks(d.sourceLinks);
+    recurseOnLinks(d.targetLinks);
+  }
+
+  function filterTrees(unfilteredGraph, filterFunction, params) {
+    var nodesToCheck = new Map();
+    unfilteredGraph.nodes.forEach(function(node) {
+      nodesToCheck.set(node.uid, node);
+    })
+
+    var filteredGraph = { nodes: [], links: [] };
+    while (nodesToCheck.size != 0) {
+      for (var [key, value] of nodesToCheck) {
+
+        if (filterFunction(value, params)) {
+          var visitedNodes = new Set();
+          var traversedEdges = new Set();
+          getSubgraph(value, visitedNodes, traversedEdges);
+
+          nodesArray = Array.from(visitedNodes);
+          edgesArray = Array.from(traversedEdges);
+
+          var tree = {
+            nodes: nodesArray.map( function(x) { return nodeMap[x] }), 
+            links: edgesArray.map( function(x) { return linkMap[x] })
+          };
+
+          tree.nodes.forEach(function(node) {
+            filteredGraph.nodes.push(node);
+            nodesToCheck.delete(key);
+          })
+          tree.links.forEach(function(link) {
+            filteredGraph.links.push(link);
+          })
+        } else {
+          nodesToCheck.delete(key);
+        }
+
+        // lol, yes, i do want this to break. Wasn't sure how else just to pop an element out of the map. Derp derp.
+        break;
+      }
+    }
+
+    if (filteredGraph.nodes.length > 0) {
+      clearVisualization();
+      drawVisualization(filteredGraph);
+    }
+  }
+
+  function clearVisualization() {
+    link.remove();
+    node.remove();
+    d3.selectAll(".tick").remove();
+    $(".tipsy").remove()
+    d3.select(".x.axis").remove();
+  }
 
 /* Draw grids everytime we zoom the axes */
 function redrawAxes(xScale) {

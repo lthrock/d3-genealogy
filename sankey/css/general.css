@@ -50,3 +50,9 @@ h1 {
   top: 120px;
   left: 20px;
 }
+
+.filters {
+  position: absolute;
+  top: 180px;
+  left: 20px;
+}
