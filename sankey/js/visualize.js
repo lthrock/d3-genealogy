@@ -17,6 +17,10 @@ var svg = d3.select("#chart").append("svg")
     .attr("transform", 
           "translate(0," + margin.top + ")");
 
+var colorArray = ["#052C94", "#0E2A8C", "#182884", "#22267C", "#2C2474", "#35226D", "#3F2065", "#491E5D", "#531C55", "#5D1A4D", "#661846", "#70163E", "#7A1436", "#84122E", "#8E1026", "#970E1F", "#A10C17", "#AB0A0F", "#B50807", "#BF0700"];
+
+var colors = d3.scale.ordinal().range(colorArray).domain(d3.range(0,20));
+
 // Helper methods
 function stringToDate(str) {
   return new Date(Date.parse(str));
@@ -45,20 +49,21 @@ function linkUID(link) {
 // load the data
 d3.json("data/force-layout.json", function(graph) {
  
-    var nodeMap = {};
-    var linkMap = {};
-    graph.nodes.forEach(function(x) { nodeMap[x.uid] = x; });
+  var nodeMap = {};
+  var linkMap = {};
+  graph.nodes.forEach(function(x) { nodeMap[x.uid] = x; });
 
-    graph.links = graph.links.map(function(x) {
-      return {
-        source: nodeMap[x.source],
-        target: nodeMap[x.target],
-        value: x.value,
-        links: x.links
-      };
-    });
+  graph.links = graph.links.map(function(x) {
+    return {
+      source: nodeMap[x.source],
+      target: nodeMap[x.target],
+      value: x.value,
+      lineCount: x.value,
+      links: x.links
+    };
+  });
 
-    graph.links.forEach(function(x) { linkMap[linkUID(x)] = x; });
+  graph.links.forEach(function(x) { linkMap[linkUID(x)] = x; });
 
   var link, node, xAxisLabels, xAxisLines, sankey, path;
   drawVisualization(graph);
@@ -70,6 +75,20 @@ d3.json("data/force-layout.json", function(graph) {
     d3.selectAll(".x.axis").remove();
     drawVisualization(graph);
   })
+
+  function getValueRange(graph) {
+    var minLinkValue = -1;
+    var maxLinkValue = -1;
+    graph.links.forEach(function(x) {
+      if (minLinkValue == -1) {
+        minLinkValue = x.lineCount;
+        maxLinkValue = x.lineCount;
+      }
+      minLinkValue = Math.min(x.lineCount, minLinkValue);
+      maxLinkValue = Math.max(x.lineCount, maxLinkValue);
+    });
+    return [minLinkValue, maxLinkValue];
+  }
 
   function drawVisualization(currGraph) {
     drawSankey(currGraph);
@@ -91,6 +110,11 @@ d3.json("data/force-layout.json", function(graph) {
         .links(currGraph.links)
         .layout(32);
 
+    var valueRange = getValueRange(currGraph);
+    var minLinkWeight = valueRange[0];
+    var maxLinkWeight = valueRange[1];
+    var weightRangeSize = maxLinkWeight - minLinkWeight;
+
     // add in the links
     link = svg.append("g").selectAll(".link")
         .data(currGraph.links)
@@ -100,13 +124,19 @@ d3.json("data/force-layout.json", function(graph) {
         .on("click", function(d) {
           showEdgeInfo(d);
         })
-        .style("stroke-width", 2);
+        .style("stroke-width", 2)
+        .style("stroke", function(d) { 
+          var index = Math.min((d.lineCount - minLinkWeight) / (weightRangeSize / colorArray.length), colorArray.length - 1);
+          return d.color = colors(index);
+        });
+        
    
     // add the link titles
     link.append("title")
           .text(function(d) {
           return d.source.description + " → " + 
-                  d.target.description + "\n" + format(d.value); });
+                  d.target.description + "\n" + format(d.value); 
+          });
    
     // add in the nodes
     node = svg.append("g").selectAll(".node")
@@ -128,7 +158,8 @@ d3.json("data/force-layout.json", function(graph) {
         // .attr("height", function(d) { return d.dy; })
         .attr("r", sankey.nodeWidth())
         .style("fill", function(d) { 
-        return d.color = color(d.uid.replace(/ .*/, "")); })
+        // color by author
+        return d.color = color(d.uid.substring(0, d.uid.lastIndexOf("_")).replace(/ .*/, "")); })
         .style("stroke", function(d) { 
         return d3.rgb(d.color).darker(2); })
       .append("title")
