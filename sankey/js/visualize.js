@@ -55,7 +55,7 @@ function apiFilter(node, params) {
 var displayedGraph;
 
 // load the data
-d3.json("data/force-layout.json", function(graph) {
+d3.json("data/d3-mouse.json", function(graph) {
  
   var nodeMap = {};
   var linkMap = {};
@@ -272,50 +272,54 @@ d3.json("data/force-layout.json", function(graph) {
 
   // isNodeFilter means all nodes must match filter criteria. Otherwise, only one node in a tree must match for the tree to be shown.
   function applyFilter(unfilteredGraph, filterFunction, params, isNodeFilter=false) {
+      console.log(unfilteredGraph);
     var nodesToCheck = new Map();
     unfilteredGraph.nodes.forEach(function(node) {
       nodesToCheck.set(node.uid, node);
     })
 
-    var filteredGraph = { nodes: [], links: [] };
+    var filteredNodes = new Set();
+    var filteredLinks = new Set();
+
     while (nodesToCheck.size != 0) {
       for (var [key, value] of nodesToCheck) {
+        var visitedNodes = new Set();
+        var traversedEdges = new Set();
 
         if (filterFunction(value, params)) {
-          var visitedNodes = new Set();
-          var traversedEdges = new Set();
           if (isNodeFilter) {
             getSubgraph(value, visitedNodes, traversedEdges, params, filterFunction);
           } else {
             getSubgraph(value, visitedNodes, traversedEdges);
           }
 
-          nodesArray = Array.from(visitedNodes);
-          edgesArray = Array.from(traversedEdges);
-
-          var tree = {
-            nodes: nodesArray.map( function(x) { return nodeMap[x] }), 
-            links: edgesArray.map( function(x) { return linkMap[x] })
-          };
-
-          tree.nodes.forEach(function(node) {
-            filteredGraph.nodes.push(node);
+          visitedNodes.forEach(function(node) {
+            filteredNodes.add(node);
             nodesToCheck.delete(key);
           })
-          tree.links.forEach(function(link) {
-            filteredGraph.links.push(link);
+          traversedEdges.forEach(function(link) {
+            filteredLinks.add(link);
           })
-        } else {
-          nodesToCheck.delete(key);
-        }
+        } 
+        nodesToCheck.delete(key);
+        
 
         // lol, yes, i do want this to break. Wasn't sure how else just to pop an element out of the map. Derp derp.
         break;
       }
     }
+    var filteredGraph = { nodes: [], links: [] };
+    filteredNodes.forEach(function(x) {
+      filteredGraph.nodes.push(nodeMap[x]);
+    });
+    filteredLinks.forEach(function(x) {
+      filteredGraph.links.push(linkMap[x]);
+    });
+
 
     if (filteredGraph.nodes.length > 0) {
       clearVisualization();
+      console.log(filteredGraph);
       drawVisualization(filteredGraph);
     }
   }
