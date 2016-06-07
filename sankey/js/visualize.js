@@ -55,7 +55,7 @@ function apiFilter(node, params) {
 var displayedGraph;
 
 // load the data
-d3.json("data/d3-mouse.json", function(graph) {
+d3.json("sankey/data/d3-mouse.json", function(graph) {
  
   var nodeMap = {};
   var linkMap = {};
