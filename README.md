@@ -28,7 +28,7 @@ This will generate a main_moss_output_[id_number].csv file and a detail_moss_out
 
 Use the parse_moss.py script to generate a links.json file. 
 
-    python parse_moss.py main_moss_output_[id_number].csv. 
+    python parse_moss.py [id_number] # (the following is old) main_moss_output_[id_number].csv. 
 
 Finally, call the filter_nodes.py script to generate the nodes-clean.json file. 
 
