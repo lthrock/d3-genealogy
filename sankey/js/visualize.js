@@ -1,4 +1,6 @@
  
+var MAX_AUTHORS_LISTED = 10; // Max length of prolific author list
+
 var units = "Widgets";
 
 var margin = {top: 20, right: 20, bottom: 20, left: 20},
@@ -20,6 +22,9 @@ var svg = d3.select("#chart").append("svg")
 var colorArray = ["#052C94", "#0E2A8C", "#182884", "#22267C", "#2C2474", "#35226D", "#3F2065", "#491E5D", "#531C55", "#5D1A4D", "#661846", "#70163E", "#7A1436", "#84122E", "#8E1026", "#970E1F", "#A10C17", "#AB0A0F", "#B50807", "#BF0700"];
 
 var colors = d3.scale.ordinal().range(colorArray).domain(d3.range(0,20));
+
+var authorDic = {};
+var fullAuthorDic = {};
 
 // Helper methods
 function stringToDate(str) {
@@ -55,11 +60,16 @@ function apiFilter(node, params) {
 var displayedGraph;
 
 // load the data
-d3.json("data/d3-mouse.json", function(graph) {
+d3.json("data/d3-nest-nodes.json", function(graph) {
  
   var nodeMap = {};
   var linkMap = {};
-  graph.nodes.forEach(function(x) { nodeMap[x.uid] = x; });
+  graph.nodes.forEach(function(x) { 
+    nodeMap[x.uid] = x;
+    addNodeToAuthorDictionary(x.uid);
+  });
+
+  fullAuthorDic = JSON.parse(JSON.stringify(authorDic));
 
   graph.links = graph.links.map(function(x) {
     return {
@@ -81,6 +91,7 @@ d3.json("data/d3-mouse.json", function(graph) {
     node.remove();
     d3.selectAll(".tick").remove();
     d3.selectAll(".x.axis").remove();
+    authorDic = fullAuthorDic;
     drawVisualization(graph);
   });
 
@@ -92,6 +103,7 @@ d3.json("data/d3-mouse.json", function(graph) {
     if (charCode == 13) {
       e.preventDefault();
       var author = authorTextField.val();
+
       applyFilter(displayedGraph, authorFilter, [author]);
     } else {
       // Potential TODO: filter as people type every character?
@@ -100,12 +112,11 @@ d3.json("data/d3-mouse.json", function(graph) {
       //     visualization. And then suddenly we have to deal with copy/paste, 
       //     etc.
 
-      // console.log("here");
       // var author = authorTextField.val();
       // var charStr = String.fromCharCode(charCode);
       // applyFilter(displayedGraph, authorFilter, [author + charStr]);
     }
-  });  
+  });
 
   var apiTextField = $(".apiFilter");
   apiTextField.keypress(function(e) { 
@@ -139,6 +150,7 @@ d3.json("data/d3-mouse.json", function(graph) {
     displayedGraph = currGraph;
     drawSankey(currGraph);
     drawTimeline();
+    updateAuthorsList()
   }   
 
   function drawSankey(currGraph) {
@@ -215,6 +227,7 @@ d3.json("data/d3-mouse.json", function(graph) {
     node.on('click', function(d) {
       var visitedNodes = new Set();
       var traversedEdges = new Set();
+      authorDic = {};
       getSubgraph(d, visitedNodes, traversedEdges);
 
       nodesArray = Array.from(visitedNodes);
@@ -249,9 +262,21 @@ d3.json("data/d3-mouse.json", function(graph) {
     });
   }
 
+  function addNodeToAuthorDictionary(node) {
+    var author = node.substring(0, node.lastIndexOf("_"));
+    if (!(author in authorDic)) {
+      authorDic[author] = []
+    }
+    if (!authorDic[author].includes(node)) {
+      authorDic[author].push(node);
+    }
+  }
+
   function getSubgraph(d, nodes, edges, params, filterFunction=function() { return true }) {
     if (nodes.has(d.uid)) return;
     nodes.add(d.uid);
+
+    addNodeToAuthorDictionary(d.uid);
 
     function recurseOnLinks(links) {
       links.forEach(function(x) { 
@@ -272,11 +297,12 @@ d3.json("data/d3-mouse.json", function(graph) {
 
   // isNodeFilter means all nodes must match filter criteria. Otherwise, only one node in a tree must match for the tree to be shown.
   function applyFilter(unfilteredGraph, filterFunction, params, isNodeFilter=false) {
-      console.log(unfilteredGraph);
+    authorDic = {};
+
     var nodesToCheck = new Map();
     unfilteredGraph.nodes.forEach(function(node) {
       nodesToCheck.set(node.uid, node);
-    })
+    });
 
     var filteredNodes = new Set();
     var filteredLinks = new Set();
@@ -319,9 +345,10 @@ d3.json("data/d3-mouse.json", function(graph) {
 
     if (filteredGraph.nodes.length > 0) {
       clearVisualization();
-      console.log(filteredGraph);
       drawVisualization(filteredGraph);
     }
+
+    updateAuthorsList();
   }
 
   function clearVisualization() {
@@ -332,75 +359,75 @@ d3.json("data/d3-mouse.json", function(graph) {
     d3.select(".x.axis").remove();
   }
 
-/* Draw grids everytime we zoom the axes */
-function redrawAxes(xScale) {
-  xAxisTicks = svg.selectAll(".tick line")
-    .attr("y1", 0)
-    .attr("y2", height)
-    .style("stroke", "#ccc");
-  
-  var startDate = sankey.nodes().minDate();
-  var endDate = sankey.nodes().maxDate();
-  
-    // find ms : px ratio
-  var timeDiff = Math.abs(startDate.getTime() - endDate.getTime());
-  var screenWidth = width - sankey.nodeWidth();
-  var timeToSizeRatio = timeDiff / screenWidth;
-  
-  var newCoordinates = sankey.nodes().map(function(d) {
-    var newX = xScale(stringToDate(d.created_at).getTime());
+  /* Draw grids everytime we zoom the axes */
+  function redrawAxes(xScale) {
+    xAxisTicks = svg.selectAll(".tick line")
+      .attr("y1", 0)
+      .attr("y2", height)
+      .style("stroke", "#ccc");
     
-    d3.select('#node_' + d.uid).attr("transform", 
-        "translate(" + (d.x = newX) + "," + (d.y = Math.max(margin.top + 30, Math.min(d.y))) + ")");
-    sankey.relayout();
-    link.attr("d", path);
-    return newX;
-  });
-}
-  
-/* Add timeline and move nodes to timeline position. */
-function drawTimeline() {
-  var startDate = sankey.nodes().minDate();
-  var endDate = sankey.nodes().maxDate();
-
-  startDate.setDate(startDate.getDate() -20);
-  endDate.setDate(endDate.getDate() +20);
-// vertical gridlines / x axis 
-  var xScale = d3.time.scale()
-        .domain([startDate, endDate])
-        .range([0, width]);
-
-  var xAxis = d3.svg.axis()
-    .orient("top")
-    // to change format: https://github.com/d3/d3/wiki/Time-Formatting
-    .tickFormat(d3.time.format('%m/%y')) 
-    .scale(xScale)
-
-  svg.append("g")
-    .attr("transform", "translate(0," + 20 + ")")
-    .attr("class", "x axis")
-    .call(xAxis);
-
-  xAxisLabels = svg.selectAll(".xAxis text")
-    .attr("transform", function(d) {
-        return "translate(" + this.getBBox().height*-2 + "," + this.getBBox().height + ")rotate(-45)";
-    })
-
-  draw = function() {
-    svg.select(".x.axis").call(xAxis);
-    redrawAxes(xScale);
+    var startDate = sankey.nodes().minDate();
+    var endDate = sankey.nodes().maxDate();
+    
+      // find ms : px ratio
+    var timeDiff = Math.abs(startDate.getTime() - endDate.getTime());
+    var screenWidth = width - sankey.nodeWidth();
+    var timeToSizeRatio = timeDiff / screenWidth;
+    
+    var newCoordinates = sankey.nodes().map(function(d) {
+      var newX = xScale(stringToDate(d.created_at).getTime());
+      
+      d3.select('#node_' + d.uid).attr("transform", 
+          "translate(" + (d.x = newX) + "," + (d.y = Math.max(margin.top + 30, Math.min(d.y))) + ")");
+      sankey.relayout();
+      link.attr("d", path);
+      return newX;
+    });
   }
+    
+  /* Add timeline and move nodes to timeline position. */
+  function drawTimeline() {
+    var startDate = sankey.nodes().minDate();
+    var endDate = sankey.nodes().maxDate();
 
-  var zoom = d3.behavior.zoom()
-  .x(xScale)
-  .scaleExtent([1, 32])
-  .on("zoom", draw);
+    startDate.setDate(startDate.getDate() -20);
+    endDate.setDate(endDate.getDate() +20);
+  // vertical gridlines / x axis 
+    var xScale = d3.time.scale()
+          .domain([startDate, endDate])
+          .range([0, width]);
 
-  redrawAxes(xScale);
+    var xAxis = d3.svg.axis()
+      .orient("top")
+      // to change format: https://github.com/d3/d3/wiki/Time-Formatting
+      .tickFormat(d3.time.format('%m/%y')) 
+      .scale(xScale)
 
-  d3.select("#chart").select("svg")
-    .call(zoom);
-}
+    svg.append("g")
+      .attr("transform", "translate(0," + 20 + ")")
+      .attr("class", "x axis")
+      .call(xAxis);
+
+    xAxisLabels = svg.selectAll(".xAxis text")
+      .attr("transform", function(d) {
+          return "translate(" + this.getBBox().height*-2 + "," + this.getBBox().height + ")rotate(-45)";
+      })
+
+    draw = function() {
+      svg.select(".x.axis").call(xAxis);
+      redrawAxes(xScale);
+    }
+
+    var zoom = d3.behavior.zoom()
+    .x(xScale)
+    .scaleExtent([1, 32])
+    .on("zoom", draw);
+
+    redrawAxes(xScale);
+
+    d3.select("#chart").select("svg")
+      .call(zoom);
+  }
  
 // the function for moving the nodes
   function dragmove(d) {
@@ -520,3 +547,51 @@ function drawTimeline() {
     })
   }
 });
+
+function selectCard(selected) {
+  $("#show-meta-stats").removeClass("selected");
+  $("#show-local-stats").removeClass("selected");
+  $(selected).addClass("selected");
+  $("#local-card").removeClass("selected");
+  $("#global-card").removeClass("selected");
+}
+
+$("#show-meta-stats").click(function() {
+  selectCard(this);
+  $("#global-card").addClass("selected");
+});
+
+$("#show-local-stats").click(function() {
+  selectCard(this);
+  $("#local-card").addClass("selected");
+});
+
+function updateAuthorsList() {
+  var authorsList = [];
+  for (var author in authorDic) {
+    authorsList.push([author, authorDic[author]]);
+  }
+  authorsList.sort(function(a, b) { 
+    return b[1].length - a[1].length })
+
+  var buf = [];
+  for (var i = 0; i < MAX_AUTHORS_LISTED; i++) {
+    if (i >= authorsList.length) break;
+
+    var author = authorsList[i][0];
+    var numWorks = authorsList[i][1].length;
+    buf[i] = "<li><a class='author-entry'><b>" + author + "</b></a> : " + numWorks + "</li>";
+  }
+  $("#author-list").html(buf.join(""));
+
+  $(".author-entry").click(function() {
+    var author = this.text;
+    $(".authorFilter").val(author)
+    $(".authorFilter").trigger({ type : 'keypress', which : 13 });
+  });
+
+}
+
+
+
+

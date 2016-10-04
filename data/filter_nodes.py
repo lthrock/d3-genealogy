@@ -49,6 +49,7 @@ for link in links:
   if (needsReorder(link)):
     reorderLink(link)
 
+# TODO: Change filter algorithm to allow select multiple parentage. 
 # Filter links to direct parents only
 parents = []
 for node in nodes:
@@ -71,6 +72,6 @@ data["links"] = parents
 
 print len(parents)
 
-outfilename = 'd3-mouse-output.json'
+outfilename = 'd3-nest-output.json'
 with open(outfilename, 'w') as outfile: 
   json.dump(data, outfile)

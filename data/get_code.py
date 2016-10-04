@@ -32,7 +32,7 @@ def main(argv):
       simple_e["api"] = e["api"]
       simple_e["readme"] = e["readme"]
       simple_e["description"] = e["description"]
-      simple_e["code"] = e["code"]
+      simple_e["code"] = code # e["code"]
       output_json.append(simple_e)
     
     
@@ -47,6 +47,8 @@ def get_js_only(code):
   if(match != None):
     return match.group(0)
   else:
+    # print "\n\n-------------------------------------------------------------"
+    # print code
     return None
   
 if __name__ == "__main__":
