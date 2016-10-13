@@ -8,10 +8,15 @@
   <link href="css/meta-card-styles.css" rel="stylesheet" type="text/css" />
   <link href="bootstrap-3.3.6-dist/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
 
+  <!-- <script type="text/javascript" src="assets/twitterbootstrap/js/bootstrap-tab.js"></script> -->
+
   <script type="text/javascript" src="http://d3js.org/d3.v3.js"></script>
   <script type= "text/javascript" src="js/sankey.js"></script>
-  <script type="text/javascript" src="http://code.jquery.com/jquery-1.6.2.min.js"></script>
+  <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.min.js"></script>
+  <script type="text/javascript" src="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
   <script type="text/javascript" src="js/jquery.tipsy.js"></script>
+  <!-- <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.js"></script> -->
+
 </head>
 
 <body>
@@ -27,18 +32,57 @@
   </div>
 
   <div id="meta-card" class="container-fluid">
-    <div class=row>
-      <div class="col-sm-10">
+    <ul class="nav nav-tabs" id="tabs" data-toggle="tabs">
+        <li class="active"><a data-target="#code-tab" data-toggle="tab">Code Comparison</a></li>
+        <li class="nav"><a data-target="#author-tab" data-toggle="tab">Prolific Authors</a></li>
+        <li class="nav"><a data-target="#overview-tab" data-toggle="tab">Overview</a></li>
+    </ul><br>
+
+    <!-- Tab panes -->
+    <div class="tab-content">
+      <!-- Node comparison -->
+      <div class="tab-pane fade in active" id="code-tab">
+        <div class="col-md-6" id="detail-parent">
+          <b> Original Source Code: </b> <span class="snippet-name"> </span> <br>
+          <b> Author: </b> <span class="author"> </span> <br>
+          <b> Creation Date: </b> <span class="created-date"> </span> <br><br>
+          <div class="code-snippet">
+          </div>
+        </div>
+        <div class="col-md-6" id="detail-child">
+          <b> Original Source Code: </b> <span class="snippet-name"> </span> <br>
+          <b> Author: </b> <span class="author"> </span> <br>
+          <b> Creation Date: </b> <span class="created-date"> </span> <br><br>
+          <div class="code-snippet">
+          </div>
+        </div>
       </div>
-      <div class="col-sm-1">
-        <a id="show-meta-stats" class="selected"> meta </a>
+      <!-- top author list -->
+      <div class="tab-pane fade" id="author-tab">
+        &nbsp&nbsp&nbsp <b>Most prolific authors:</b><br>
+        <ol id=author-list>
+          blah
+        </ol>
       </div>
-      <div class="col-sm-1">
-        <a id="show-local-stats"> local </a>
+      <!-- graph overview statistics -->
+      <div class="tab-pane fade" id="overview-tab">
+        &nbsp&nbsp&nbsp<b>Snippets:</b><span id="snippet-count"> </span> <br>
+        &nbsp&nbsp&nbsp<b>Links:</b><span id="link-count"> </span> <br>
+        &nbsp&nbsp&nbsp<b>Unique Authors:</b><span id="author-count"> </span> <br>
+
       </div>
+
     </div>
-    <div class="row selected" id=global-card>
-      Most prolific authors:
+
+    <script type="text/javascript">
+    jQuery(document).ready(function ($) {
+        $('#tabs').tab();
+    });
+    </script> 
+
+
+    <!-- <div class="row selected" id=global-card>
+      &nbsp&nbsp&nbsp <b>Most prolific authors:</b><br>
       <ol id=author-list>
         blah
       </ol>
@@ -58,8 +102,9 @@
         <div class="code-snippet">
         </div>
       </div>
-    </div>
+    </div> -->
   </div>
   <script type= "text/javascript" src="js/visualize.js"></script>
+  
 </body>
 </html>

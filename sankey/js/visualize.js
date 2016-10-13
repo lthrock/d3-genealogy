@@ -150,7 +150,7 @@ d3.json("data/d3-nest-nodes.json", function(graph) {
     displayedGraph = currGraph;
     drawSankey(currGraph);
     drawTimeline();
-    updateAuthorsList()
+    updateMetaCards(currGraph);
   }   
 
   function drawSankey(currGraph) {
@@ -348,7 +348,7 @@ d3.json("data/d3-nest-nodes.json", function(graph) {
       drawVisualization(filteredGraph);
     }
 
-    updateAuthorsList();
+    updateMetaCards(filteredGraph);
   }
 
   function clearVisualization() {
@@ -566,13 +566,23 @@ $("#show-local-stats").click(function() {
   $("#local-card").addClass("selected");
 });
 
+function updateMetaCards(filteredGraph) {
+  var numAuthors = updateAuthorsList().length;
+  updateOverviewCard(filteredGraph, numAuthors);
+}
+
 function updateAuthorsList() {
   var authorsList = [];
   for (var author in authorDic) {
     authorsList.push([author, authorDic[author]]);
   }
   authorsList.sort(function(a, b) { 
-    return b[1].length - a[1].length })
+    if (b[1].length != a[1].length) {
+      return b[1].length - a[1].length 
+    } else {
+      return (a[0] < b[0] ? -1 : 1);
+    }
+  })
 
   var buf = [];
   for (var i = 0; i < MAX_AUTHORS_LISTED; i++) {
@@ -590,6 +600,13 @@ function updateAuthorsList() {
     $(".authorFilter").trigger({ type : 'keypress', which : 13 });
   });
 
+  return authorsList;
+}
+
+function updateOverviewCard(filteredGraph, numAuthors) {
+  $("#snippet-count").text(" " + filteredGraph.nodes.length);
+  $("#link-count").text(" " + filteredGraph.links.length);
+  $("#author-count").text(" " + numAuthors);
 }
 
 
