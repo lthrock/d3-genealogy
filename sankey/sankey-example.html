@@ -21,7 +21,102 @@
 
 <body>
 
-  <h1>The Genealogy of D3 Code</h1>
+
+
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-sm-3"> </div>
+      <div class="col-sm-15"> 
+        <h1>The Genealogy of D3 Code</h1> 
+      </div>
+      <div class="col-sm-3"> 
+        <button class="btn btn-primary modal-open"> Show Detail View </button>
+      </div>
+    </div>
+
+
+    <div class="modal-outer">
+      <div class="modal-inner">
+        <div class="row modal-content">
+
+          <div class="col-sm-1" id="arrow-col">
+            <img src="assets/GrayArrow.png" class="left-arrow img-responsive" alt="Slide Left">
+          </div>
+
+          <div class="col-sm-8 gist-details"> 
+            <div class="title-box">
+              <div class="description-container">
+                <span class="title"> Example2 </span> <span class="date"> 2015-03-15 </span>
+                <div class="author"> Author: emeeks </div>
+              </div>
+            </div>
+            <div class="code-box">
+              <div class="code-container code-box-0">
+                <div class="match-block color-0">
+                  <div class="code-line"> <span class="line-number"> 1 </span>  I am code; code code code code code code code code code code code code code code code code code code code code code code code code code code code code </div>
+                  <div class="code-line"> <span class="line-number"> 2 </span>  Code am I; </div>
+                </div>
+                <a class="hidden-code" data-toggle="collapse" data-target="#collapse-1"> <b> 3-7</b> </a>
+                <div id="collapse-1" class="collapse">
+                  <div class="code-line"> <span class="line-number"> 3 </span> code; de; code code code code code code code code code code code code code code; de; code code code code code code code code code code code code code code;</div>
+                  <div class="code-line"> <span class="line-number"> 4 </span> code; </div>
+                  <div class="code-line"> <span class="line-number"> 5 </span> code; </div>
+                  <div class="code-line"> <span class="line-number"> 6 </span> code; </div>
+                  <div class="code-line"> <span class="line-number"> 7 </span> code; </div>
+                </div>
+                <div class="match-block color-1">
+                  <div> <span class="line-number"> 8 </span>  I am code; </div>
+                  <div> <span class="line-number"> 9 </span>  Code am I; </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-sm-8 gist-details"> 
+            <div class="title-box">
+              <div class="description-container">
+                <span class="title"> Example3 </span> <span class="date"> 2015-09-08 </span>
+                <div class="author"> Author: renecnielsen </div>
+              </div>
+            </div>
+            <div class="code-box">
+              <div class="code-container code-box-1">
+              </div>
+            </div>
+          </div>
+
+          <div class="col-sm-4 preview-list"> 
+            <div class="preview-box">
+              <div class="description-container">
+                <span class="title"> Example4 </span> <span class="date"> --Date-- </span>
+                <div class="author"> FooAuthor </div>
+              </div>
+              <div class="code-container">
+
+                <div class="match-block color-1">
+                  <div class="code-line"> <span class="line-number"> 1 </span>  I am code; code code code code code code code code code code code code code code; </div>
+                  <div class="code-line"> <span class="line-number"> 2 </span>  Code am I; </div>
+                </div>
+
+                <div class="hidden-code"> <b> 3-6 </b> </div>
+
+                <div class="match-block color-0">
+                  <div class="code-line"> <span class="line-number"> 7 </span>  I am code; code code code code code code code code code code code code code code; </div>
+                  <div class="code-line"> <span class="line-number"> 8 </span>  Code am I; </div>
+                </div>
+
+              </div>
+            </div>
+            <div class="preview-box">
+            </div>
+            <div class="preview-box last">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div>
     <button class="btn btn-primary resetButton"> reset </button>
     <form action="demo_form.asp" class="filters">
@@ -30,6 +125,9 @@
     </form>
     <div id="chart"></div>
   </div>
+  
+
+
 
   <div id="meta-card" class="container-fluid">
     <ul class="nav nav-tabs" id="tabs" data-toggle="tabs">
@@ -104,6 +202,7 @@
       </div>
     </div> -->
   </div>
+  <script type= "text/javascript" src="js/generateHTML.js"></script>
   <script type= "text/javascript" src="js/visualize.js"></script>
   
 </body>

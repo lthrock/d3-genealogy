@@ -1,10 +1,11 @@
 package com.stanford.lucast.d3evo.resources;
 
-// import com.stanford.lucast.d3evo.api.Saying;
+import com.stanford.lucast.d3evo.api.sankey.BasicSankeyData;
 import com.stanford.lucast.d3evo.api.sankey.SankeyData;
 import com.stanford.lucast.d3evo.api.sankey.SankeyNode;
 import com.stanford.lucast.d3evo.api.sankey.SankeyLink;
 import com.stanford.lucast.d3evo.api.sankey.CodeSimilarity;
+
 import com.codahale.metrics.annotation.Timed;
 
 import javax.ws.rs.GET;
@@ -19,6 +20,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.io.FileInputStream;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.InputStream;
 import java.io.IOException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,32 +31,30 @@ import java.util.Scanner;
 @Path("/d3-evo")
 @Produces(MediaType.APPLICATION_JSON)
 public class EvolutionOfD3Resource {
-    // private final String template;
-    // private final String defaultName;
     private final Map<String, String> codeMap;
     private final String dataFilename;
-    private final AtomicLong counter;
 
-    // public EvolutionOfD3Resource(String template, String defaultName) {
+    private SankeyData fileData;
+    private BasicSankeyData basicData;
+
     public EvolutionOfD3Resource(String filename) {
+        System.out.println("EvolutionOfD3Resource");
         this.dataFilename = filename;
-        this.counter = new AtomicLong();
-        // this.template = template;
-        // this.defaultName = defaultName;
-
         this.codeMap = createNodeToCodeMap(filename);
     }
 
     private Map<String, String> createNodeToCodeMap(String filename) {
         final ObjectMapper mapper = new ObjectMapper();
-        System.out.println("__________________");
 
         try {
             // Read in json file and map to SankeyData object
             InputStream input = EvolutionOfD3Resource.class.getClass().getResourceAsStream(filename);
-            final SankeyData fileData = mapper.readValue(input, SankeyData.class);
 
-            // Create map from the data
+            fileData = mapper.readValue(input, SankeyData.class);
+            System.out.println(fileData);
+            System.out.println(fileData.getLinks());
+
+            // Create map from the data for easy code lookup
             Map<String,String> map = new HashMap<String,String>();
             List<SankeyNode> nodes = fileData.getNodes();
             for (SankeyNode node : nodes) {
@@ -61,6 +62,9 @@ public class EvolutionOfD3Resource {
                 String code = node.getCode();
                 map.put(uid, code);
             }
+
+            // Distill info required by client to create sankey
+            basicData = new BasicSankeyData(fileData);
 
             return map;
         } catch (IOException e) {
@@ -71,22 +75,12 @@ public class EvolutionOfD3Resource {
 
     @GET
     @Timed
-    public String getCodeForNode(@QueryParam("uid") Optional<String> nodeId) {
-        String code = codeMap.get(nodeId.orElse(""));
-        return code != null ? code : "Error: No code found for uid.";
+    public Object query(@QueryParam("uid") Optional<String> nodeId) {
+        if (nodeId.isPresent()) {
+            String code = codeMap.get(nodeId.get());
+            return code != null ? code : "Error: No code found for uid.";
+        } else {
+            return basicData;
+        }
     }
-
-    // @GET
-    // @Timed
-    // public NodeMap(@QueryParam("nodeId")) {
-
-    // }
-
-    // @GET
-    // @Timed
-    // public Saying sayHello(@QueryParam("name") Optional<String> name) {
-    //     System.out.println("SAYHELLO");
-    //     final String value = String.format(template, name.orElse(defaultName));
-    //     return new Saying(counter.incrementAndGet(), value);
-    // }
 }

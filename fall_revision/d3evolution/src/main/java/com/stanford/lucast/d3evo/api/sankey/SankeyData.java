@@ -26,7 +26,7 @@ public class SankeyData {
 	}
 
 	@JsonProperty
-	public void setLinks(List<SankeyLink> setLinks) {
+	public void setLinks(List<SankeyLink> links) {
 		this.links = links;
 	}
 }

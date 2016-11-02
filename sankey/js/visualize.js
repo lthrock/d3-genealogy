@@ -59,8 +59,26 @@ function apiFilter(node, params) {
 
 var displayedGraph;
 
-// load the data
-d3.json("data/d3-nest-nodes.json", function(graph) {
+
+sendRequest(fetchGraphCallback);
+
+function sendRequest(callback, uid=null) {
+  var params = "";
+  var datatype = "json";
+  if (uid != null) {
+    params = "?uid=" + uid
+    datatype = "text";
+  }
+  $.ajax({
+    type: 'GET',
+    url: "http://localhost:8080/d3-evo" + params,
+    dataType: datatype, // data type of response
+    success: callback
+  });
+}
+
+
+function fetchGraphCallback(graph) {
  
   var nodeMap = {};
   var linkMap = {};
@@ -476,56 +494,38 @@ d3.json("data/d3-nest-nodes.json", function(graph) {
     var parentNode = link.source;
     var childNode = link.target;
 
-    var sourceLines = parentNode.code.split(/\n/);
-    var targetLines = childNode.code.split(/\n/);
-    var newSourceStartDivs = {};
-    var newSourceEndDivs = {};
-    var newTargetStartDivs = {};
-    var newTargetEndDivs = {};
+    // check out generateHTML.js
+    newHTML = generateDiffHTML(parentNode, childNode, link);
+    console.log(newHTML);
 
-    newSourceStartDivs["count"] = 0;
-    for (var i = 0; i < link.links.length; i++) {
-      var match = link.links[i];
-      var matchNumber = newSourceStartDivs["count"]++;
-
-      newSourceStartDivs[match.source_start_line] = matchNumber;
-      newSourceEndDivs[match.source_end_line] = matchNumber;
-
-      newTargetStartDivs[match.target_start_line] = matchNumber;
-      newTargetEndDivs[match.target_end_line] = matchNumber;
-    }
-
-    parent.find(".code-snippet").html(generateCodeHtml(sourceLines, newSourceStartDivs, newSourceEndDivs));
-    child.find(".code-snippet").html(generateCodeHtml(targetLines, newTargetStartDivs, newTargetEndDivs));
-  }
 
   // swaps source and target if an edge is in the wrong order
-  function ensureLinkIsDirected(link) {
-    var source = link.source;
-    var target = link.target;
+  // function ensureLinkIsDirected(link) {
+  //   var source = link.source;
+  //   var target = link.target;
 
-    if (link.source.created_at > link.target.created_at) {
-      var temp = link.source;
-      link.source = link.target;
-      link.target = temp;
-    }
+  //   if (link.source.created_at > link.target.created_at) {
+  //     var temp = link.source;
+  //     link.source = link.target;
+  //     link.target = temp;
+  //   }
+  // }
   }
 
   // updates the code comparison card for a given edge.
   function showEdgeInfo(link) {
-    ensureLinkIsDirected(link);
+    // ensureLinkIsDirected(link);
     var parentNode = link.source;
     var childNode = link.target;
 
-    parent.find(".snippet-name").text(parentNode.description)
-    parent.find(".author").text(parentNode.uid)
-    parent.find(".created-date").text(parentNode.created_at)
+    // parent.find(".snippet-name").text(parentNode.description)
+    // parent.find(".author").text(parentNode.uid)
+    // parent.find(".created-date").text(parentNode.created_at)
 
-    child.find(".snippet-name").text(childNode.description)
-    child.find(".author").text(childNode.uid)
-    child.find(".created-date").text(childNode.created_at)
+    // child.find(".snippet-name").text(childNode.description)
+    // child.find(".author").text(childNode.uid)
+    // child.find(".created-date").text(childNode.created_at)
 
-    // TODO: replace this with a real edge, that includes real code and line numbers.
     updateCode(link);
   }
 
@@ -546,7 +546,7 @@ d3.json("data/d3-nest-nodes.json", function(graph) {
       $(this).css("background-color", "white");
     })
   }
-});
+}
 
 function selectCard(selected) {
   $("#show-meta-stats").removeClass("selected");
@@ -608,6 +608,23 @@ function updateOverviewCard(filteredGraph, numAuthors) {
   $("#link-count").text(" " + filteredGraph.links.length);
   $("#author-count").text(" " + numAuthors);
 }
+
+$(document).ready(function() {
+  var buttonClosedStateText = "Show Detail View";
+  var buttonOpenedStateText = "Hide Detail View";
+  $(".modal-open").html(buttonClosedStateText);
+
+  $(".modal-open").click(function() {
+    var content = $(".modal-open").html();
+    if (content == buttonClosedStateText) {
+      $(".modal-open").html(buttonOpenedStateText);
+      $(".modal-outer").fadeIn('slow');
+    } else {
+      $(".modal-open").html(buttonClosedStateText);
+      $(".modal-outer").fadeOut('slow');
+    }
+  });
+});
 
 
 

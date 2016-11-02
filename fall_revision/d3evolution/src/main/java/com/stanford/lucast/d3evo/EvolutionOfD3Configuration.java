@@ -8,7 +8,12 @@ import javax.validation.constraints.*;
 public class EvolutionOfD3Configuration extends Configuration {
 
 	@NotEmpty
-	private String defaultFilename = "/d3-nest-nodes.json"; 
+    // private String defaultFilename = "/d3-nest-nodes.json"; 
+    private String defaultFilename = "/500-output.json"; 
+    
+
+    @NotEmpty
+    private String clientURL = "http://localhost:8000";
 
 	@JsonProperty 
 	public String getDataFilename() {
@@ -19,4 +24,8 @@ public class EvolutionOfD3Configuration extends Configuration {
 	public void setDataFilename(String filename) {
 		this.defaultFilename = filename;
 	}
+
+    public String getClientURL() {
+        return clientURL;
+    }
 }
