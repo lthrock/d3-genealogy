@@ -38,11 +38,9 @@
     <!-- Detail View Template -->
     <div class="modal-outer">
       <div class="modal-inner modal-content">
-        <div id="diff-row">
+        <div class="col-sm-16" id="diff-cols">
           <canvas id="html5Canvas"> </canvas>
-
-
-          <div class="col-sm-16" id="diff-cols">
+          <div id="diff-row">
 
             <!-- Column 0 -->
             <div class="col-sm-5" id="col-0">
@@ -112,55 +110,58 @@
               </div>
             </div>
           </div>
-
-          <!-- Column 4 - this has info on the next set of children nodes -->
-          <div class="col-sm-4 rightmost-col"> 
-            <div class="node-preview">
-              <span class='preview-attr name'> Name </span>
-              <br>
-              <span class='preview-attr author'> Author </span>
-              <br>
-              <span class='preview-attr date'> Date </span>
-              <br>
-              <img class='preview' src='assets/thumbnail1.png'>
-            </div>
-            <div class="node-preview">
-              <span class='preview-attr name'> Name </span>
-              <br>
-              <span class='preview-attr author'> Author </span>
-              <br>
-              <span class='preview-attr date'> Date </span>
-              <br>
-              <img class='preview' src='assets/thumbnail1.png'>
-            </div>
-            <div class="node-preview">
-              <span class='preview-attr name'> Name </span>
-              <br>
-              <span class='preview-attr author'> Author </span>
-              <br>
-              <span class='preview-attr date'> Date </span>
-              <br>
-              <img class='preview' src='assets/thumbnail1.png'>
+          <div id="inspector-row">
+            <div class="col-sm-20" id="inspector-contents"> 
+              <div class="seperator" id="seperator-gray"> </div>
+              <div id="inspector-code">
+                <div class="col-sm-10" id="inspector-left"> 
+                  hi
+                </div>
+                <div class="col-sm-10" id="inspector-right"> 
+                  hi
+                </div>
+              </div>
             </div>
           </div>
-
         </div>
-        <div id="inspector-row">
-          <div class="col-sm-16" id="inspector-contents"> 
-            <div class="seperator" id="seperator-gray"> </div>
-            <div id="inspector-code">
-              <div class="col-sm-10" id="inspector-left"> 
-                hi
-              </div>
-              <div class="col-sm-10" id="inspector-right"> 
-                hi
-              </div>
+
+
+        <!-- Column 4 - this has info on the next set of children nodes -->
+        <div class="col-sm-4 rightmost-col"> 
+          <div class="rightmost-col-header">
+            Select next gist
+            </div>
+          <div class="node-preview-list">
+            <div class="node-preview">
+              <span class='preview-attr name'> Name </span>
+              <br>
+              <span class='preview-attr author'> Author </span>
+              <br>
+              <span class='preview-attr date'> Date </span>
+              <br>
+              <img class='preview' src='assets/thumbnail1.png'>
+            </div>
+            <div class="node-preview">
+              <span class='preview-attr name'> Name </span>
+              <br>
+              <span class='preview-attr author'> Author </span>
+              <br>
+              <span class='preview-attr date'> Date </span>
+              <br>
+              <img class='preview' src='assets/thumbnail1.png'>
+            </div>
+            <div class="node-preview">
+              <span class='preview-attr name'> Name </span>
+              <br>
+              <span class='preview-attr author'> Author </span>
+              <br>
+              <span class='preview-attr date'> Date </span>
+              <br>
+              <img class='preview' src='assets/thumbnail1.png'>
             </div>
           </div>
-          <div class="col-sm-4 rightmost-col">
-            <div class="seperator" id="seperator-inverted"> </div>
-            hi
-          </div>
+        </div>
+
         </div>
       </div>
     </div>

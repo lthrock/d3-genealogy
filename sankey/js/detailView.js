@@ -308,7 +308,8 @@ function getPolygonCorners(parentCol, index) {
   var xCorrection2 = 18;
 
   // account for scroll
-  var yCorrection = -1 * $("#diff-cols").scrollTop();
+  var yCorrection = -1 * $("#diff-row").scrollTop();
+  console.log(yCorrection);
 
   var leftX = xCorrection1 + parentStart.parent().parent().parent().position().left + parentStart.width();
   var leftStartY = yCorrection + parentStart.position().top + parentStart.height();

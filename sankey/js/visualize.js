@@ -469,7 +469,7 @@ $(document).ready(function() {
     addCanvasHTML(numberOfMatchesPerColumn);
   });
 
-  $("#diff-cols").on('scroll', function() {
+  $("#diff-row").on('scroll', function() {
     addCanvasHTML(numberOfMatchesPerColumn);
   })
 
