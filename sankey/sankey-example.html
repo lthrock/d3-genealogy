@@ -5,7 +5,8 @@
   <link href="css/general.css" rel="stylesheet" type="text/css" />
   <link href="css/tipsy.css" rel="stylesheet" type="text/css" />
   <link href="css/callout-styles.css" rel="stylesheet" type="text/css" />
-  <link href="css/meta-card-styles.css" rel="stylesheet" type="text/css" />
+  <!-- <link href="css/meta-card-styles.css" rel="stylesheet" type="text/css" /> -->
+  <link href="css/detail-view-styles.css" rel="stylesheet" type="text/css" />
   <link href="bootstrap-3.3.6-dist/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
 
   <!-- <script type="text/javascript" src="assets/twitterbootstrap/js/bootstrap-tab.js"></script> -->
@@ -26,7 +27,7 @@
   <div class="container-fluid">
     <div class="row">
       <div class="col-sm-3"> </div>
-      <div class="col-sm-15"> 
+      <div class="col-sm-14"> 
         <h1>The Genealogy of D3 Code</h1> 
       </div>
       <div class="col-sm-3"> 
@@ -34,83 +35,131 @@
       </div>
     </div>
 
-
+    <!-- Detail View Template -->
     <div class="modal-outer">
-      <div class="modal-inner">
-        <div class="row modal-content">
+      <div class="modal-inner modal-content">
+        <div id="diff-row">
+          <canvas id="html5Canvas"> </canvas>
 
-          <div class="col-sm-1" id="arrow-col">
-            <img src="assets/GrayArrow.png" class="left-arrow img-responsive" alt="Slide Left">
-          </div>
 
-          <div class="col-sm-8 gist-details"> 
-            <div class="title-box">
-              <div class="description-container">
-                <span class="title"> Example2 </span> <span class="date"> 2015-03-15 </span>
-                <div class="author"> Author: emeeks </div>
-              </div>
-            </div>
-            <div class="code-box">
-              <div class="code-container code-box-0">
-                <div class="match-block color-0">
-                  <div class="code-line"> <span class="line-number"> 1 </span>  I am code; code code code code code code code code code code code code code code code code code code code code code code code code code code code code </div>
-                  <div class="code-line"> <span class="line-number"> 2 </span>  Code am I; </div>
+          <div class="col-sm-16" id="diff-cols">
+
+            <!-- Column 0 -->
+            <div class="col-sm-5" id="col-0">
+              <br><br>
+              <div class="row header-area">
+                <div class="col-sm-8 thumbnail-col inside-full-height"> 
                 </div>
-                <a class="hidden-code" data-toggle="collapse" data-target="#collapse-1"> <b> 3-7</b> </a>
-                <div id="collapse-1" class="collapse">
-                  <div class="code-line"> <span class="line-number"> 3 </span> code; de; code code code code code code code code code code code code code code; de; code code code code code code code code code code code code code code;</div>
-                  <div class="code-line"> <span class="line-number"> 4 </span> code; </div>
-                  <div class="code-line"> <span class="line-number"> 5 </span> code; </div>
-                  <div class="code-line"> <span class="line-number"> 6 </span> code; </div>
-                  <div class="code-line"> <span class="line-number"> 7 </span> code; </div>
+                <div class="col-sm-12 title-and-author-col inside-full-height"> 
+                  <div class="title-and-author-text">
+                    <div class="name">  </div>
+                    <div class="author"> No gist selected. </div>
+                  </div>
                 </div>
-                <div class="match-block color-1">
-                  <div> <span class="line-number"> 8 </span>  I am code; </div>
-                  <div> <span class="line-number"> 9 </span>  Code am I; </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="col-sm-8 gist-details"> 
-            <div class="title-box">
-              <div class="description-container">
-                <span class="title"> Example3 </span> <span class="date"> 2015-09-08 </span>
-                <div class="author"> Author: renecnielsen </div>
-              </div>
-            </div>
-            <div class="code-box">
-              <div class="code-container code-box-1">
-              </div>
-            </div>
-          </div>
-
-          <div class="col-sm-4 preview-list"> 
-            <div class="preview-box">
-              <div class="description-container">
-                <span class="title"> Example4 </span> <span class="date"> --Date-- </span>
-                <div class="author"> FooAuthor </div>
               </div>
               <div class="code-container">
-
-                <div class="match-block color-1">
-                  <div class="code-line"> <span class="line-number"> 1 </span>  I am code; code code code code code code code code code code code code code code; </div>
-                  <div class="code-line"> <span class="line-number"> 2 </span>  Code am I; </div>
-                </div>
-
-                <div class="hidden-code"> <b> 3-6 </b> </div>
-
-                <div class="match-block color-0">
-                  <div class="code-line"> <span class="line-number"> 7 </span>  I am code; code code code code code code code code code code code code code code; </div>
-                  <div class="code-line"> <span class="line-number"> 8 </span>  Code am I; </div>
-                </div>
-
               </div>
             </div>
-            <div class="preview-box">
+
+            <!-- Column 1 -->
+            <div class="col-sm-5" id="col-1">
+              <br><br>
+              <div class="row header-area">
+                <div class="col-sm-8 code-thumbnail inside-full-height" > 
+                </div>
+                <div class="col-sm-12 title-and-author-col inside-full-height"> 
+                  <div class="title-and-author-text">
+                    <div class="name">  </div>
+                    <div class="author"> No gist selected. </div>
+                  </div>
+                </div>
+              </div>
+              <div class="code-container">
+              </div>
             </div>
-            <div class="preview-box last">
+
+            <!-- Column 2 -->
+            <div class="col-sm-5" id="col-2">
+              <br><br>
+              <div class="row header-area">
+                <div class="col-sm-8 code-thumbnail inside-full-height" > 
+                </div>
+                <div class="col-sm-12 title-and-author-col inside-full-height"> 
+                  <div class="title-and-author-text">
+                    <div class="name">  </div>
+                    <div class="author"> No gist selected. </div>
+                  </div>
+                </div>
+              </div>
+              <div class="code-container">
+              </div>
             </div>
+
+            <!-- Column 3 - the most recently selected node-->
+            <div class="col-sm-5" id="col-3">
+              <br><br>
+              <div class="row header-area">
+                <div class="col-sm-8 code-thumbnail inside-full-height" > 
+                </div>
+                <div class="col-sm-12 title-and-author-col inside-full-height"> 
+                  <div class="title-and-author-text">
+                    <div class="name">  </div>
+                    <div class="author"> No gist selected. </div>
+                  </div>
+                </div>
+              </div>
+              <div class="code-container">
+              </div>
+            </div>
+          </div>
+
+          <!-- Column 4 - this has info on the next set of children nodes -->
+          <div class="col-sm-4 rightmost-col"> 
+            <div class="node-preview">
+              <span class='preview-attr name'> Name </span>
+              <br>
+              <span class='preview-attr author'> Author </span>
+              <br>
+              <span class='preview-attr date'> Date </span>
+              <br>
+              <img class='preview' src='assets/thumbnail1.png'>
+            </div>
+            <div class="node-preview">
+              <span class='preview-attr name'> Name </span>
+              <br>
+              <span class='preview-attr author'> Author </span>
+              <br>
+              <span class='preview-attr date'> Date </span>
+              <br>
+              <img class='preview' src='assets/thumbnail1.png'>
+            </div>
+            <div class="node-preview">
+              <span class='preview-attr name'> Name </span>
+              <br>
+              <span class='preview-attr author'> Author </span>
+              <br>
+              <span class='preview-attr date'> Date </span>
+              <br>
+              <img class='preview' src='assets/thumbnail1.png'>
+            </div>
+          </div>
+
+        </div>
+        <div id="inspector-row">
+          <div class="col-sm-16" id="inspector-contents"> 
+            <div class="seperator" id="seperator-gray"> </div>
+            <div id="inspector-code">
+              <div class="col-sm-10" id="inspector-left"> 
+                hi
+              </div>
+              <div class="col-sm-10" id="inspector-right"> 
+                hi
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-4 rightmost-col">
+            <div class="seperator" id="seperator-inverted"> </div>
+            hi
           </div>
         </div>
       </div>
@@ -126,83 +175,8 @@
     <div id="chart"></div>
   </div>
   
-
-
-
-  <div id="meta-card" class="container-fluid">
-    <ul class="nav nav-tabs" id="tabs" data-toggle="tabs">
-        <li class="active"><a data-target="#code-tab" data-toggle="tab">Code Comparison</a></li>
-        <li class="nav"><a data-target="#author-tab" data-toggle="tab">Prolific Authors</a></li>
-        <li class="nav"><a data-target="#overview-tab" data-toggle="tab">Overview</a></li>
-    </ul><br>
-
-    <!-- Tab panes -->
-    <div class="tab-content">
-      <!-- Node comparison -->
-      <div class="tab-pane fade in active" id="code-tab">
-        <div class="col-md-6" id="detail-parent">
-          <b> Original Source Code: </b> <span class="snippet-name"> </span> <br>
-          <b> Author: </b> <span class="author"> </span> <br>
-          <b> Creation Date: </b> <span class="created-date"> </span> <br><br>
-          <div class="code-snippet">
-          </div>
-        </div>
-        <div class="col-md-6" id="detail-child">
-          <b> Original Source Code: </b> <span class="snippet-name"> </span> <br>
-          <b> Author: </b> <span class="author"> </span> <br>
-          <b> Creation Date: </b> <span class="created-date"> </span> <br><br>
-          <div class="code-snippet">
-          </div>
-        </div>
-      </div>
-      <!-- top author list -->
-      <div class="tab-pane fade" id="author-tab">
-        &nbsp&nbsp&nbsp <b>Most prolific authors:</b><br>
-        <ol id=author-list>
-          blah
-        </ol>
-      </div>
-      <!-- graph overview statistics -->
-      <div class="tab-pane fade" id="overview-tab">
-        &nbsp&nbsp&nbsp<b>Snippets:</b><span id="snippet-count"> </span> <br>
-        &nbsp&nbsp&nbsp<b>Links:</b><span id="link-count"> </span> <br>
-        &nbsp&nbsp&nbsp<b>Unique Authors:</b><span id="author-count"> </span> <br>
-
-      </div>
-
-    </div>
-
-    <script type="text/javascript">
-    jQuery(document).ready(function ($) {
-        $('#tabs').tab();
-    });
-    </script> 
-
-
-    <!-- <div class="row selected" id=global-card>
-      &nbsp&nbsp&nbsp <b>Most prolific authors:</b><br>
-      <ol id=author-list>
-        blah
-      </ol>
-    </div>
-    <div class=row id=local-card>
-      <div class="col-md-6" id="detail-parent">
-        <b> Original Source Code: </b> <span class="snippet-name"> </span> <br>
-        <b> Author: </b> <span class="author"> </span> <br>
-        <b> Creation Date: </b> <span class="created-date"> </span> <br><br>
-        <div class="code-snippet">
-        </div>
-      </div>
-      <div class="col-md-6" id="detail-child">
-        <b> Original Source Code: </b> <span class="snippet-name"> </span> <br>
-        <b> Author: </b> <span class="author"> </span> <br>
-        <b> Creation Date: </b> <span class="created-date"> </span> <br><br>
-        <div class="code-snippet">
-        </div>
-      </div>
-    </div> -->
-  </div>
   <script type= "text/javascript" src="js/generateHTML.js"></script>
+  <script type= "text/javascript" src="js/detailView.js"></script>
   <script type= "text/javascript" src="js/visualize.js"></script>
   
 </body>

@@ -79,7 +79,6 @@ function sendRequest(callback, uid=null) {
 
 
 function fetchGraphCallback(graph) {
- 
   var nodeMap = {};
   var linkMap = {};
   graph.nodes.forEach(function(x) { 
@@ -168,7 +167,6 @@ function fetchGraphCallback(graph) {
     displayedGraph = currGraph;
     drawSankey(currGraph);
     drawTimeline();
-    updateMetaCards(currGraph);
   }   
 
   function drawSankey(currGraph) {
@@ -243,21 +241,23 @@ function fetchGraphCallback(graph) {
         return d.uid + "\n" + format(d.value); });
 
     node.on('click', function(d) {
-      var visitedNodes = new Set();
-      var traversedEdges = new Set();
-      authorDic = {};
-      getSubgraph(d, visitedNodes, traversedEdges);
+      showNodeAndThreeDescendants(d);
 
-      nodesArray = Array.from(visitedNodes);
-      edgesArray = Array.from(traversedEdges);
+      // var visitedNodes = new Set();
+      // var traversedEdges = new Set();
+      // authorDic = {};
+      // getSubgraph(d, visitedNodes, traversedEdges);
 
-      var newGraph = {
-        nodes: nodesArray.map( function(x) { return nodeMap[x] }), 
-        links: edgesArray.map( function(x) { return linkMap[x] })
-      };
+      // nodesArray = Array.from(visitedNodes);
+      // edgesArray = Array.from(traversedEdges);
 
-      clearVisualization();
-      drawVisualization(newGraph);
+      // var newGraph = {
+      //   nodes: nodesArray.map( function(x) { return nodeMap[x] }), 
+      //   links: edgesArray.map( function(x) { return linkMap[x] })
+      // };
+
+      // clearVisualization();
+      // drawVisualization(newGraph);
     });
 
     // Tooltips
@@ -267,14 +267,13 @@ function fetchGraphCallback(graph) {
       title: function() {
         var d = this.__data__;
         return (
-          "<span class='callout-text'>" + 
+          "<div class='callout-text'>" + 
             "<span class='attr-name'> NAME: </span>" + d.description +
             "<br>\
             <span class='attr-name'> AUTHOR: </span>" + d.uid.substring(0, d.uid.lastIndexOf("_")) + "<br>\
             <span class='attr-name'> DATE: </span>" + d.created_at + "<br>\
-            <span class=attr-name'> APIs: </span><br>\
-                  &nbsp&nbsp" + d.api.join("<br>&nbsp&nbsp") + 
-          "</span>"
+            <img class='preview' src='assets/thumbnail1.png'>\
+          </span>"
         );
       }
     });
@@ -365,8 +364,6 @@ function fetchGraphCallback(graph) {
       clearVisualization();
       drawVisualization(filteredGraph);
     }
-
-    updateMetaCards(filteredGraph);
   }
 
   function clearVisualization() {
@@ -458,158 +455,24 @@ function fetchGraphCallback(graph) {
     sankey.relayout();
     link.attr("d", path);
   }
-
-  // update card after clicking on a link
-  var parent = $("#detail-parent");
-  var child = $("#detail-child");
-
-  // Outputs html for code, highlighting matches in red.
-  function generateCodeHtml(lines, startDivs, endDivs) {
-    var emptySpan = "<span> </span>"
-    var newHtml = $("<div class='full-width'> </div>");
-    var currentElement = $(emptySpan);
-    for (var i = 0; i < lines.length; i++) {
-      var lineNumber = i + 1;
-      if (lineNumber in startDivs) {
-        newHtml.append(currentElement);
-        currentElement = $("<div class='match match-" + startDivs[lineNumber] + "'> </div>");
-        currentElement.hover(highlight, removeHighlight);
-      }
-
-      var newLine = $("<div class='full-width'> </div>");
-      newLine.text(lineNumber + "\t" + lines[i]);
-      currentElement.append(newLine);
-
-      if (lineNumber in endDivs) {
-        newHtml.append(currentElement);
-        currentElement = $(emptySpan);
-      }
-    }
-    newHtml.append(currentElement);
-    return newHtml;
-  }
-
-  // updates the code snippets in the code comparison card
-  function updateCode(link) {
-    var parentNode = link.source;
-    var childNode = link.target;
-
-    // check out generateHTML.js
-    newHTML = generateDiffHTML(parentNode, childNode, link);
-    console.log(newHTML);
-
-
-  // swaps source and target if an edge is in the wrong order
-  // function ensureLinkIsDirected(link) {
-  //   var source = link.source;
-  //   var target = link.target;
-
-  //   if (link.source.created_at > link.target.created_at) {
-  //     var temp = link.source;
-  //     link.source = link.target;
-  //     link.target = temp;
-  //   }
-  // }
-  }
-
-  // updates the code comparison card for a given edge.
-  function showEdgeInfo(link) {
-    // ensureLinkIsDirected(link);
-    var parentNode = link.source;
-    var childNode = link.target;
-
-    // parent.find(".snippet-name").text(parentNode.description)
-    // parent.find(".author").text(parentNode.uid)
-    // parent.find(".created-date").text(parentNode.created_at)
-
-    // child.find(".snippet-name").text(childNode.description)
-    // child.find(".author").text(childNode.uid)
-    // child.find(".created-date").text(childNode.created_at)
-
-    updateCode(link);
-  }
-
-  // highlight a specific code match (on hover) using hoveree's class
-  function highlight(e) {
-    var matchingLines = $("." + e.currentTarget.className.split(" ").join("."));
-
-    $(matchingLines).each(function() {
-      $(this).css("background-color", "lightgray");
-    })
-  }
-
-  // remove highlight after hover ends
-  function removeHighlight(e) {
-    var matchingLines = $("." + e.currentTarget.className.split(" ").join("."));
-
-    $(matchingLines).each(function() {
-      $(this).css("background-color", "white");
-    })
-  }
 }
 
-function selectCard(selected) {
-  $("#show-meta-stats").removeClass("selected");
-  $("#show-local-stats").removeClass("selected");
-  $(selected).addClass("selected");
-  $("#local-card").removeClass("selected");
-  $("#global-card").removeClass("selected");
-}
-
-$("#show-meta-stats").click(function() {
-  selectCard(this);
-  $("#global-card").addClass("selected");
-});
-
-$("#show-local-stats").click(function() {
-  selectCard(this);
-  $("#local-card").addClass("selected");
-});
-
-function updateMetaCards(filteredGraph) {
-  var numAuthors = updateAuthorsList().length;
-  updateOverviewCard(filteredGraph, numAuthors);
-}
-
-function updateAuthorsList() {
-  var authorsList = [];
-  for (var author in authorDic) {
-    authorsList.push([author, authorDic[author]]);
-  }
-  authorsList.sort(function(a, b) { 
-    if (b[1].length != a[1].length) {
-      return b[1].length - a[1].length 
-    } else {
-      return (a[0] < b[0] ? -1 : 1);
-    }
-  })
-
-  var buf = [];
-  for (var i = 0; i < MAX_AUTHORS_LISTED; i++) {
-    if (i >= authorsList.length) break;
-
-    var author = authorsList[i][0];
-    var numWorks = authorsList[i][1].length;
-    buf[i] = "<li><a class='author-entry'><b>" + author + "</b></a> : " + numWorks + "</li>";
-  }
-  $("#author-list").html(buf.join(""));
-
-  $(".author-entry").click(function() {
-    var author = this.text;
-    $(".authorFilter").val(author)
-    $(".authorFilter").trigger({ type : 'keypress', which : 13 });
-  });
-
-  return authorsList;
-}
-
-function updateOverviewCard(filteredGraph, numAuthors) {
-  $("#snippet-count").text(" " + filteredGraph.nodes.length);
-  $("#link-count").text(" " + filteredGraph.links.length);
-  $("#author-count").text(" " + numAuthors);
-}
 
 $(document).ready(function() {
+  var detailView = document.getElementById("diff-row");
+
+  detailView.addEventListener('click', function(event) { 
+    canvasClickFunction(event);
+  }, false);
+
+  $(window).on('resize', function(){
+    addCanvasHTML(numberOfMatchesPerColumn);
+  });
+
+  $("#diff-cols").on('scroll', function() {
+    addCanvasHTML(numberOfMatchesPerColumn);
+  })
+
   var buttonClosedStateText = "Show Detail View";
   var buttonOpenedStateText = "Hide Detail View";
   $(".modal-open").html(buttonClosedStateText);
@@ -619,6 +482,8 @@ $(document).ready(function() {
     if (content == buttonClosedStateText) {
       $(".modal-open").html(buttonOpenedStateText);
       $(".modal-outer").fadeIn('slow');
+
+      addCanvasHTML(numberOfMatchesPerColumn);
     } else {
       $(".modal-open").html(buttonClosedStateText);
       $(".modal-outer").fadeOut('slow');

@@ -14,7 +14,7 @@ def reorderLink(link):
   for l in link["links"]:
     temp = l["target_end_line"]
     l["target_end_line"] = l["source_end_line"]
-    l["source_start_line"] = temp
+    l["source_end_line"] = temp
     temp = l["target_confidence"]
     l["target_confidence"] = l["source_confidence"]
     l["source_confidence"] = temp
@@ -72,6 +72,6 @@ data["links"] = parents
 
 print len(parents)
 
-outfilename = 'd3-nest-output.json'
+outfilename = '1000-output.json'
 with open(outfilename, 'w') as outfile: 
   json.dump(data, outfile)
