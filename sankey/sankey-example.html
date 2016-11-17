@@ -38,6 +38,9 @@
     <!-- Detail View Template -->
     <div class="modal-outer">
       <div class="modal-inner modal-content">
+        <div id=left-arrow-container> 
+          <img id="left-arrow" src='assets/GrayArrow.png'>
+        </div>
         <div class="col-sm-16" id="diff-cols">
           <canvas id="html5Canvas"> </canvas>
           <div id="diff-row">
@@ -63,7 +66,7 @@
             <div class="col-sm-5" id="col-1">
               <br><br>
               <div class="row header-area">
-                <div class="col-sm-8 code-thumbnail inside-full-height" > 
+                <div class="col-sm-8 thumbnail-col inside-full-height" > 
                 </div>
                 <div class="col-sm-12 title-and-author-col inside-full-height"> 
                   <div class="title-and-author-text">
@@ -80,7 +83,7 @@
             <div class="col-sm-5" id="col-2">
               <br><br>
               <div class="row header-area">
-                <div class="col-sm-8 code-thumbnail inside-full-height" > 
+                <div class="col-sm-8 thumbnail-col inside-full-height" > 
                 </div>
                 <div class="col-sm-12 title-and-author-col inside-full-height"> 
                   <div class="title-and-author-text">
@@ -97,7 +100,7 @@
             <div class="col-sm-5" id="col-3">
               <br><br>
               <div class="row header-area">
-                <div class="col-sm-8 code-thumbnail inside-full-height" > 
+                <div class="col-sm-8 thumbnail-col inside-full-height" > 
                 </div>
                 <div class="col-sm-12 title-and-author-col inside-full-height"> 
                   <div class="title-and-author-text">
@@ -131,8 +134,9 @@
           <div class="rightmost-col-header">
             Select next gist
             </div>
-          <div class="node-preview-list">
+          <div id="node-preview-list">
             <div class="node-preview">
+              <span class="hidden-uid"> uid </span> 
               <span class='preview-attr name'> Name </span>
               <br>
               <span class='preview-attr author'> Author </span>
@@ -142,6 +146,7 @@
               <img class='preview' src='assets/thumbnail1.png'>
             </div>
             <div class="node-preview">
+              <span class="hidden-uid"> uid </span> 
               <span class='preview-attr name'> Name </span>
               <br>
               <span class='preview-attr author'> Author </span>
@@ -151,6 +156,7 @@
               <img class='preview' src='assets/thumbnail1.png'>
             </div>
             <div class="node-preview">
+              <span class="hidden-uid"> uid </span> 
               <span class='preview-attr name'> Name </span>
               <br>
               <span class='preview-attr author'> Author </span>

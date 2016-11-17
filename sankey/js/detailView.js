@@ -1,13 +1,31 @@
 
+/* 
+ * Necessary to keep track of how many polygons to draw between columns
+ */
+var numberOfMatchesPerColumn = [0, 0, 0];
+
+/*
+ * Necessary to highlight any selected polygon
+ */
+var highlightedPolygon = undefined;
+
+/*
+ * Keeps track of all nodes traversed in the detail view.
+ *
+ * Top node is used to determine the next nodes that will be viewed in the 
+ * preview list on the right.
+ */
+var selectedNodeStack = [];
+
 /*
  * Debugging method, just populates the detail view with a clicked node and 
  * its first child, grand child, and great grand child.
  */
 function showNodeAndThreeDescendants(node) {
-  var nodes = [];
+  var selectedNodeStack = [];
   var links = [];
   for (var i = 0; i < 4; i++) {
-    nodes.push(node);
+    selectedNodeStack.push(node);
     if (node.sourceLinks[0] == undefined) {
       break;
     }
@@ -15,10 +33,78 @@ function showNodeAndThreeDescendants(node) {
     node = node.sourceLinks[0].target
   }
 
-  populateDiffs(nodes, links);
+  populateDiffs(selectedNodeStack, links);
+  populatePreviewList(selectedNodeStack[selectedNodeStack.length - 1]);
 }
 
-/* Send Request to Server to get code for a node */
+/*
+ * Clears old path from detail view, and begins a new one given a selected node
+ */
+function createNewPathWithRoot(node) {
+  selectedNodeStack = [node];
+  updateDisplayedNodes();
+}
+
+/*
+ * Pushes a new node on the node stack, and refreshes detail view to reflect 
+ * changes.
+ */
+function extendPathWithNode(node) {
+  selectedNodeStack.push(node);
+  updateDisplayedNodes();
+
+  // update highlighted polygon to reflect the shift left.
+  if (highlightedPolygon == undefined || highlightedPolygon.parent == 0) {
+    highlightedPolygon = undefined;
+  } else {
+    highlightedPolygon.child = highlightedPolygon.parent;
+    highlightedPolygon.parent = highlightedPolygon.parent - 1;
+  }
+}
+
+/*
+ * Refreshes detail view, showing only the four top nodes in selectedNodeStack,
+ * and updates preview list to show children of rightmost node. 
+ */
+function updateDisplayedNodes() {
+  var nodes = [];
+  var links = [];
+
+  var totalNodes = selectedNodeStack.length
+  var numToDisplay = Math.min(4, totalNodes); // only space for 4 in detail view
+  var node = selectedNodeStack[totalNodes - numToDisplay];
+
+  for (var i = 0; i < numToDisplay; i++) {
+    nodes.push(node);
+
+    // at each node but the last, get the link between the node and the 
+    // next to be displayed.
+    if (i < numToDisplay - 1) {
+      var nextNode = selectedNodeStack[totalNodes - numToDisplay + i + 1];
+      var found = false;
+      // search through all links until the one that goes to the next 
+      // node is found
+      for (var j = 0; j < node.sourceLinks.length; j++) {
+        var link = node.sourceLinks[j];
+        if (link.target.uid == nextNode.uid) {
+          found = true;
+          links.push(link);
+          break;
+        }
+      }
+      if (!found) {
+        console.log("ERROR: no matching target found.")
+      }
+      node = nextNode;
+    }
+  }
+  populateDiffs(nodes, links);
+  populatePreviewList(nodes[nodes.length - 1]);
+}
+
+/* 
+ * Send Request to Server to get code for a node
+ */
 function sendCodeRequest(callback, uid, index) {
   var params = "";
   var datatype = "json";
@@ -34,16 +120,6 @@ function sendCodeRequest(callback, uid, index) {
   });
 }
 
-/* 
- * Necessary to keep track of how many polygons to draw between columns
- */
-var numberOfMatchesPerColumn = [0, 0, 0];
-
-/*
- * Necessary to highlight any selected polygon
- */
-var highlightedPolygon = undefined;
-
 /*
  * Make requests for all of the necessary code from server. 
  * Then, create HTML for the presented code in the detail view, and update 
@@ -52,12 +128,11 @@ var highlightedPolygon = undefined;
  * TODO: optimize to not rerequest old code that's already being shown.
  */
 function populateDiffs(nodes, links) {
-  // clear old html: 
-  for (var i = 0; i < 4; i++) {
-    $("#col-" + i + " .thumbnail-col.inside-full-height").html("");
-    $("#col-" + i + " .name").html("");
-    $("#col-" + i + " .author").html("");
-  }
+  // clear old html:
+  $(".thumbnail-col.inside-full-height").html("");
+  $(".name").html("");
+  $(".author").html("");
+  $(".code-container").html("");;
 
   var resultCount = 0;
   var results = [];
@@ -67,6 +142,7 @@ function populateDiffs(nodes, links) {
     if (++resultCount == nodes.length) {
       numberOfMatchesPerColumn = createCodeHTML(nodes, links, results);
     }
+    addCanvasHTML(numberOfMatchesPerColumn);
   }
 
   for (var i = 0; i < nodes.length; i++) {
@@ -266,6 +342,10 @@ function addCanvasHTML(matchCounts) {
  */
 function drawConnectingPolygon(context, parentCol, index) {
   var corners = getPolygonCorners(parentCol, index);
+
+  if (corners.error) {
+    return;
+  }
   
   // draw polygon!
   if (highlightedPolygon != undefined && 
@@ -303,13 +383,18 @@ function getPolygonCorners(parentCol, index) {
   var childStart = $(prefix + "right-start-match-" + index);
   var childEnd = $(prefix + "right-end-match-" + index);
 
+  if (parentStart.length === 0 || parentEnd.length === 0 || childStart.length === 0 || childEnd.length === 0) {
+    return {
+      error: true
+    }
+  }
+
   // div edges aren't exactly where we want to start drawing our connecting polygons.
   var xCorrection1 = 25;
   var xCorrection2 = 18;
 
   // account for scroll
   var yCorrection = -1 * $("#diff-row").scrollTop();
-  console.log(yCorrection);
 
   var leftX = xCorrection1 + parentStart.parent().parent().parent().position().left + parentStart.width();
   var leftStartY = yCorrection + parentStart.position().top + parentStart.height();
@@ -345,6 +430,22 @@ function canvasClickFunction(event) {
   }
 }
 
+function arrowClickFunction() {
+  selectedNodeStack.pop();
+  updateDisplayedNodes();
+
+  // update highlighted polygon to reflect the shift left.
+  var removedNodeIndex = Math.min(3, selectedNodeStack.length + 1);
+  // if it was on the far right of the screen, the polygon gets cut off.
+  if (highlightedPolygon == undefined || highlightedPolygon.child == removedNodeIndex) {
+    highlightedPolygon = undefined;
+  // otherwise, if there are still 4 nodes shown, shift the polygon right
+  } else if (selectedNodeStack.length >= 4) {
+    highlightedPolygon.parent = highlightedPolygon.child;
+    highlightedPolygon.child = highlightedPolygon.child + 1;
+  } 
+}
+
 /*
  * Iterates through all drawn polygons and checks to see if the given polygon
  * contains the point (x, y).
@@ -358,10 +459,12 @@ function canvasClickFunction(event) {
  * selected polygon.
  */
 function searchForSelectedPolygon(x, y) {
-  // console.log("x: " + x + ", y: " + y);
   for (var i = 0; i < numberOfMatchesPerColumn.length; i++) {
     for (var j = 0; j < numberOfMatchesPerColumn[i]; j++) {
       var corners = getPolygonCorners(i, j);
+      if (corners.error) {
+        continue;
+      }
       if (inPolygon(x, y, corners)) {
         var result = {};
         result.parent = i;
@@ -391,7 +494,7 @@ function inPolygon(x, y, corners) {
   var topIntersect = corners.leftStart.y - (topSlope * corners.leftStart.x);
 
   var bottomSlope = (corners.leftEnd.y - corners.rightEnd.y) / (corners.leftEnd.x - corners.rightEnd.x);
-  var bottomIntersect = corners.leftEnd.y - (topSlope * corners.leftEnd.x);
+  var bottomIntersect = corners.leftEnd.y - (bottomSlope * corners.leftEnd.x);
 
   // determine if point is below top line and above bottom line
   var belowTop = y > topSlope * x + topIntersect; // > is intentional
@@ -413,8 +516,6 @@ function updateMatchInspector(polygonInfo) {
   
   $("#inspector-left").html(leftHTML);
   $("#inspector-right").html(rightHTML);
-
-  console.log("found");
 }
 
 /*
@@ -427,17 +528,52 @@ function getMatchHTML(prefix, side, matchNumber) {
   var newContents = {};
 
   for (var jqueryObjectIndex in contents) {
-    console.log(jqueryObjectIndex);
     var entry = contents[jqueryObjectIndex]
     if (entry.id == undefined || entry.id.length == 0) {
       newContents[jqueryObjectIndex] = contents[jqueryObjectIndex];
     }
   }
-  console.log(newContents);
   return contents;
 }
 
+function populatePreviewList(previousNode) {
+  // don't clear a path of one node.
+  if (previousNode == undefined) {
+    return;
+  }
 
+  var listHTML = $("#node-preview-list");
+  listHTML.html("");
+
+  for (var i = 0; i < previousNode.sourceLinks.length; i++) {
+    var sourceLink = previousNode.sourceLinks[i];
+    var target = sourceLink.target
+    var uid = target.uid;
+    var name = target.description;
+    var author = uid.substring(0, uid.lastIndexOf("_"));
+    var date = target.created_at;
+    var imageURL = "assets/thumbnail1.png"; // TODO: update this to actual preview image
+
+    var nodeHTML = $("<div class='node-preview'> </div>");
+    var hiddenHTML = $("<span class='hidden-uid'> " + uid + "</span>");
+    var nameHTML = $("<span class='preview-attr name'> " + name + "</span><br>");
+    var authorHTML = $("<span class='preview-attr author'> " + author + "</span><br>");
+    var dateHTML = $("<span class='preview-attr date'> " + date + "</span><br>");
+    var imageHTML = $("<img class='preview' src='" + imageURL + "'>");
+    nodeHTML.append(hiddenHTML);
+    nodeHTML.append(nameHTML);
+    nodeHTML.append(authorHTML);
+    nodeHTML.append(dateHTML);
+    nodeHTML.append(imageHTML);
+
+    nodeHTML.on("click", function() {
+      var uid = $(".hidden-uid", this).text().trim();
+      extendPathWithNode(nodeMap[uid]);
+    });
+
+    listHTML.append(nodeHTML);
+  }
+}
 
 
 

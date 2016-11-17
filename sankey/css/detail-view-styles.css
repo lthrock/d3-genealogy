@@ -11,10 +11,28 @@
 
 .modal-inner.modal-content {
 	background-color: #FFFFFF;
-  border-radius: 16px;
+	border-radius: 16px;
 	width: 92%;
 	height: 96%;
 	margin: auto;
+	margin-top:  10px;
+}
+
+#left-arrow-container {
+  position: absolute;
+  height: 100%;
+  z-index: 10001;
+  width: 45px;
+  /* margin:  auto; */
+}
+
+#left-arrow {
+  width: 25px;
+  height:  73px;
+  left:  10px;
+  position: relative;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 #diff-row {
@@ -60,7 +78,7 @@ canvas {
   text-align: center;
 }
 
-.node-preview-list {
+#node-preview-list {
   overflow-y: auto;
   height: -webkit-calc(100% - 40px);
   height:    -moz-calc(100% - 40px);
@@ -189,12 +207,18 @@ canvas {
   padding-bottom: 4px;
 }
 
+.preview-attr.name {
+  font-weight: bold;
+}
+
 .preview-attr {
     padding-left: 2px;
     padding-right:  2px;
 }
 
-
+.hidden-uid {
+  display: none;
+}
 
 
 

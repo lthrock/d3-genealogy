@@ -77,9 +77,9 @@ function sendRequest(callback, uid=null) {
   });
 }
 
+var nodeMap = {};
 
 function fetchGraphCallback(graph) {
-  var nodeMap = {};
   var linkMap = {};
   graph.nodes.forEach(function(x) { 
     nodeMap[x.uid] = x;
@@ -241,7 +241,9 @@ function fetchGraphCallback(graph) {
         return d.uid + "\n" + format(d.value); });
 
     node.on('click', function(d) {
-      showNodeAndThreeDescendants(d);
+      // showNodeAndThreeDescendants(d);
+
+      createNewPathWithRoot(d);
 
       // var visitedNodes = new Set();
       // var traversedEdges = new Set();
@@ -465,6 +467,13 @@ $(document).ready(function() {
     canvasClickFunction(event);
   }, false);
 
+
+  var leftArrow = document.getElementById("left-arrow");
+
+  leftArrow.addEventListener('click', function(event) { 
+    arrowClickFunction();
+  }, false);
+
   $(window).on('resize', function(){
     addCanvasHTML(numberOfMatchesPerColumn);
   });
@@ -489,6 +498,16 @@ $(document).ready(function() {
       $(".modal-outer").fadeOut('slow');
     }
   });
+
+  $(".modal-outer").click(function() {
+    var buttonClosedStateText = "Show Detail View";
+    $(".modal-open").html(buttonClosedStateText);
+    $(".modal-outer").fadeOut('slow');
+  })
+
+  $(".modal-inner").click(function(e) {
+    e.stopPropagation();
+  })
 });
 
 
