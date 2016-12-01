@@ -1,6 +1,8 @@
 #!/usr/bin/python
 
 import json, sys, getopt, re, random
+from sets import Set
+from bs4 import BeautifulSoup
 
 # Usage: ./get_code.py -i <inputfile>
 
@@ -13,6 +15,9 @@ def main(argv):
   code_array = d["hits"]["hits"]
   
   output_json = []
+  uniqueIds = Set()
+  # print "total" + str(len(code_array))
+  numThumbnails = 0;
   
   for element in code_array:
     gistid = element["_id"]
@@ -22,37 +27,61 @@ def main(argv):
     
     code = get_js_only(code)
 
+    uniqueIds.add(gistid)
 
-    if(code != None and len(code) < 25000):
+    if (code != None):
+      # if (author == "mbostock" or random.randint(0, 2) == 0):
+      filename = 'data/' + author + '_' + gistid + '.html'
+      outfile = open(filename, 'w')
+      outfile.write(code)
+      simple_e = {}
+      simple_e["uid"] = author + '_' + gistid
+      simple_e["created_at"] = e["created_at"]
+      simple_e["updated_at"] = e["updated_at"]
+      simple_e["api"] = e["api"]
+      simple_e["readme"] = e["readme"]
+      simple_e["description"] = e["description"]
+      simple_e["code"] = code # e["code"]
+      if ("thumbnail.png" in e["filenames"]):
+        host = "https://gist.githubusercontent.com/"
+        thumbId = e["thumb"]
+        filename = "/thumbnail.png"
+        simple_e["thumb_url"] = host + author + "/" + gistid + "/raw/" + thumbId + filename
+        numThumbnails += 1
 
-      if (author == "mbostock" or random.randint(0, 2) == 0):
-        filename = 'data/' + author + '_' + gistid + '.html'
-        outfile = open(filename, 'w')
-        outfile.write(code)
-        simple_e = {}
-        simple_e["uid"] = author + '_' + gistid
-        simple_e["created_at"] = e["created_at"]
-        simple_e["updated_at"] = e["updated_at"]
-        simple_e["api"] = e["api"]
-        simple_e["readme"] = e["readme"]
-        simple_e["description"] = e["description"]
-        simple_e["code"] = code # e["code"]
-        output_json.append(simple_e)
+      output_json.append(simple_e)
   
-  print len(output_json)
+  print "unique blocks: " + str(len(uniqueIds))
+  print "blocks with code: " + str(len(output_json))
+  print "blocks with thumbnails: " + str(numThumbnails)
+
   with open('nodes.json', 'w') as datafile:
     json.dump(output_json, datafile)   
     
-def get_js_only(code):
-  re.DOTALL
-  re.MULTILINE
-  match = re.search('<script>.*</script>', code, re.DOTALL)
-  if(match != None):
-    return match.group(0)
+def get_js_only(code):  
+  soup = BeautifulSoup(code)
+  scriptTags = soup.find_all("script")
+  if (len(scriptTags) != 0):
+    jsCode = ""
+    for tag in scriptTags:
+      if (jsCode != ""):
+        jsCode += "\n"
+      jsCode += str(tag)
+    return jsCode
   else:
-    # print "\n\n-------------------------------------------------------------"
-    # print code
     return None
+
+  # re.DOTALL
+  # re.MULTILINE
+  # match = re.search('<script.*>.*</script>', code, re.DOTALL)
+  # if(match != None):
+  #   print "\n\n-------------------------------------------------------------"
+  #   print match.group(0)
+  #   return match.group(0)
+  # else:
+  #   # print "\n\n-------------------------------------------------------------"
+  #   # print code
+  #   return None
   
 if __name__ == "__main__":
    main(sys.argv[1:])

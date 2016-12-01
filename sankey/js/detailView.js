@@ -18,6 +18,28 @@ var highlightedPolygon = undefined;
 var selectedNodeStack = [];
 
 /*
+ * If true, matches in code will not try to be aligned until the user 
+ * clicks the red connection. Then, it will vertically align the blocks, 
+ * trying to make the connection as horizontal as possible. 
+ */
+var clickToAlignMode = false;
+
+/*
+ * if (clickToAlignMode), this keeps track of the currently expanded div
+ * used to make to passages of code aligned. This allows us to 
+ * efficiently collapse this div later upon mode switch or clicking 
+ * a new connector
+ */
+var expandedBufferDiv = undefined;
+
+/*
+ * Stores all buffer pairs (one from each block with an identified similarity, 
+ * per similarity). Later, if not in clickToAlignMode, check these divs
+ * and move them around to align the the corresponding matches horizontally.
+ */
+var bufferPairs = [];
+
+/*
  * Debugging method, just populates the detail view with a clicked node and 
  * its first child, grand child, and great grand child.
  */
@@ -125,6 +147,9 @@ function sendCodeRequest(callback, uid, index) {
  * Then, create HTML for the presented code in the detail view, and update 
  * the view.
  *
+ * If in mode clickToAlignMode, display will do its best to align 
+ * all matches vertically.
+ *
  * TODO: optimize to not rerequest old code that's already being shown.
  */
 function populateDiffs(nodes, links) {
@@ -141,7 +166,18 @@ function populateDiffs(nodes, links) {
     results[response.index] = response.code.split(/\n/);
     if (++resultCount == nodes.length) {
       numberOfMatchesPerColumn = createCodeHTML(nodes, links, results);
+      storeBufferDivs();
+
+      if (!clickToAlignMode) {
+        if (expandedBufferDiv != undefined) {
+          expandedBufferDiv.attr("height", "0px"); // just in case?
+          expandedBufferDiv = undefined;
+        }
+
+        alignSimilarities();
+      }
     }
+
     addCanvasHTML(numberOfMatchesPerColumn);
   }
 
@@ -155,6 +191,103 @@ function populateDiffs(nodes, links) {
     $("#col-" + i + " .name").html(node.description);
     $("#col-" + i + " .author").html(author);
   }
+}
+
+/*
+ * Finds all buffer pairs present in the HTML so that they can be referenced
+ * efficiently later in "alignSimilarities()".
+ */
+function storeBufferDivs() {
+  bufferPairs = [];
+  for (var i = 0; i < numberOfMatchesPerColumn.length; i++) {
+    for (var j = 0; j < numberOfMatchesPerColumn[i]; j++) {
+      var prefix = "#buffer-cols-" + i + "-" + (i+1) + "-";
+      var suffix = "-start-match-" + j;
+
+      var leftBuffer = $(prefix + "left" + suffix);
+      var rightBuffer = $(prefix + "right" + suffix);
+      bufferPairs.push([leftBuffer, rightBuffer]);
+    }
+  }
+}
+
+/*
+ *
+ *
+ *
+ */
+function alignSimilarities() {
+
+  function maxY(endpointDivs) {
+    var leftY = endpointDivs[0].offset().top
+    var rightY = endpointDivs[1].offset().top;
+    return Math.max(leftY, rightY);
+  }
+
+  var tempBufferPairs = bufferPairs.slice();
+  var usedBufferPairs = []; // we want to make sure that none of these ever
+                            // get moved twice. If so, we undo a step
+  while (tempBufferPairs.length > 0) {
+    console.log(tempBufferPairs.length);
+    // find the topmost remaining similarity
+    var minIndex = 0;
+    var minValue = maxY(tempBufferPairs[0]);
+    for (var i = 1; i < tempBufferPairs.length; i++) {
+      var topEndpointY = maxY(tempBufferPairs[i]);
+      if (topEndpointY < minValue) {
+        minIndex = i;
+        minValue = topEndpointY;
+      }
+    }
+
+    var leftStart = tempBufferPairs[minIndex][0];
+    var rightStart = tempBufferPairs[minIndex][1];
+
+    var leftStartY = leftStart.offset().top;
+    var rightStartY = rightStart.offset().top;
+
+    /*
+     * If this messes up a previously set-up alignment, return false.
+     * This should indicate to caller to undo any immediate changes made.
+     */
+    function maintainedPreviousAlignment() {
+      for (var j = 0; j < usedBufferPairs.length; j++) {
+        var left = usedBufferPairs[j][0];
+        var right = usedBufferPairs[j][1];
+
+        if (left.offset().top + left.height() != right.offset().top + right.height()) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    var failed = false;
+    if (leftStartY < rightStartY) {
+      console.log("..1");
+      leftStart.css("height", (rightStartY - leftStartY) + "px");
+      failed = !maintainedPreviousAlignment();
+      if (failed) {
+        console.log("failed");
+        leftStart.css("height", "0px");
+      }
+    } else if (leftStartY > rightStartY) {
+      console.log("..2");
+      rightStart.css("height", (leftStartY - rightStartY) + "px");
+      failed = !maintainedPreviousAlignment();
+      if (failed) {
+        console.log("failed");
+        rightStart.css("height", "0px");
+      }
+    }
+
+    // move the entry to the usedLists
+    tempBufferPairs.splice(minIndex, 1);
+    if (!failed) {
+      usedBufferPairs.push([leftStart, rightStart]);
+    }
+  }
+  addCanvasHTML(numberOfMatchesPerColumn);
 }
 
 /*
@@ -200,7 +333,11 @@ function createBoundaryDivsForLine(idMap, lineNumber) {
   if (idMap[lineNumber] != undefined) {
     var idList = idMap[lineNumber];
     for (var i = 0; i < idList.length; i++) {
-      var boundaryHTML = "<div class='match-boundary' id='" + idList[i] + "'> </div>"
+      var bufferHTML = "";
+      if (idList[i].includes("start")) {
+        bufferHTML = "<div class='match-buffer' id='buffer-" + idList[i] + "'> </div>";
+      }
+      var boundaryHTML = bufferHTML + "<div class='match-boundary' id='" + idList[i] + "'> </div>";
       newHTML += boundaryHTML;
     }
   }
@@ -426,10 +563,50 @@ function canvasClickFunction(event) {
   var selectedPolygon = searchForSelectedPolygon(x, y)
 
   if (selectedPolygon != undefined) {
-    updateMatchInspector(selectedPolygon);
+    // clear old canvas for the sake of a pretty animation
+    var canvas = document.getElementById("html5Canvas");
+    canvas.height = canvas.height
+    canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+
+    if (clickToAlignMode) {
+
+      if (expandedBufferDiv != undefined) {
+        expandedBufferDiv.css("height", "0px");
+        expandedBufferDiv = undefined;
+      }
+
+      var prefix = "#buffer-cols-" + selectedPolygon.parent + "-" + selectedPolygon.child + "-";
+      var suffix = "-start-match-" + selectedPolygon.matchNumber;
+
+      var leftStart = $(prefix + "left" + suffix);
+      var rightStart = $(prefix + "right" + suffix);
+
+      var leftStartY = leftStart.offset().top;
+      var rightStartY = rightStart.offset().top;
+
+      if (leftStartY < rightStartY) {
+        leftStart.animate({ height: (rightStartY - leftStartY) + "px"}, 
+                          "slow", 
+                          function() { updateMatchInspector(selectedPolygon)});
+        expandedBufferDiv = leftStart;
+      } else if (leftStartY > rightStartY) {
+        rightStart.animate({ height: (leftStartY - rightStartY) + "px"}, 
+                          "slow", 
+                          function() { updateMatchInspector(selectedPolygon)});
+        expandedBufferDiv = rightStart;
+      } else {
+        updateMatchInspector(selectedPolygon)
+      }
+    }
+    
   }
 }
 
+/*
+ * When arrow on left side of the detail view is clicked, you should pop the
+ * path stack, and then shift over the columns, effectively stepping backwards
+ * in the path traversed down the tree.
+ */
 function arrowClickFunction() {
   selectedNodeStack.pop();
   updateDisplayedNodes();
@@ -504,9 +681,13 @@ function inPolygon(x, y, corners) {
 }
 
 /*
- * Given a selected polygon's info { parent: parentCol, child: childCol, matchNumber: index }
+ * Given a selected polygon's info 
+ *      ({ parent: parentCol, child: childCol, matchNumber: index }),
+ * updates the canvas (highlighting the selected polygon) and then
+ * updates the inspector view with the left and right side of the similarity
  */
 function updateMatchInspector(polygonInfo) {
+  console.log("---");
   highlightedPolygon = polygonInfo;
   // highlight new polygon
   addCanvasHTML(numberOfMatchesPerColumn);
@@ -536,6 +717,9 @@ function getMatchHTML(prefix, side, matchNumber) {
   return contents;
 }
 
+/*
+ * Adds items to the preview list in the rightmost column
+ */
 function populatePreviewList(previousNode) {
   // don't clear a path of one node.
   if (previousNode == undefined) {
@@ -574,12 +758,3 @@ function populatePreviewList(previousNode) {
     listHTML.append(nodeHTML);
   }
 }
-
-
-
-
-
-
-
-
-

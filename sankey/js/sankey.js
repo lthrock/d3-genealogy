@@ -161,6 +161,11 @@ d3.sankey = function() {
     });
   }
  
+
+  // function scaleVertically(factor) {
+    
+  // }
+
   function computeNodeDepths(iterations) {
     var nodesByBreadth = d3.nest()
         .key(function(d) { return d.x; })
@@ -262,6 +267,7 @@ d3.sankey = function() {
       return a.y - b.y;
     }
   }
+
  
   function computeLinkDepths() {
     nodes.forEach(function(node) {

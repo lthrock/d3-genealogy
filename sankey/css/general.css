@@ -5,10 +5,16 @@ h1 {
 #chart {
   margin: 0 20px 0 20px;
 }
-.node circle {
+
+.node circle.node-circle {
   cursor: move;
   fill-opacity: .9;
   shape-rendering: crispEdges;
+  pointer-events: auto;
+}
+
+.node image {
+  pointer-events: none;
 }
  
 .node text {

@@ -5,7 +5,7 @@ var units = "Widgets";
 
 var margin = {top: 20, right: 20, bottom: 20, left: 20},
     width = window.innerWidth - margin.left - margin.right,
-    height = 600 - margin.top - margin.bottom;
+    height = 800 - margin.top - margin.bottom;
  
 var formatNumber = d3.format(",.0f"),    // zero decimal places
     format = function(d) { return formatNumber(d) + " " + units; },
@@ -25,6 +25,10 @@ var colors = d3.scale.ordinal().range(colorArray).domain(d3.range(0,20));
 
 var authorDic = {};
 var fullAuthorDic = {};
+
+var nodesZoomed = false;
+var displayedGraph;
+var circleMoved = false;
 
 // Helper methods
 function stringToDate(str) {
@@ -57,7 +61,6 @@ function apiFilter(node, params) {
   return node.api.includes(params[0]); 
 }
 
-var displayedGraph;
 
 
 sendRequest(fetchGraphCallback);
@@ -100,7 +103,7 @@ function fetchGraphCallback(graph) {
 
   graph.links.forEach(function(x) { linkMap[linkUID(x)] = x; });
 
-  var link, node, xAxisLabels, xAxisLines, sankey, path;
+  var link, node, circle, xAxisLabels, xAxisLines, sankey, path, clipPath;
   drawVisualization(graph);
 
   $(".resetButton").click(function() {
@@ -122,16 +125,6 @@ function fetchGraphCallback(graph) {
       var author = authorTextField.val();
 
       applyFilter(displayedGraph, authorFilter, [author]);
-    } else {
-      // Potential TODO: filter as people type every character?
-      //     Only reason this is hard is because, when people backspace,
-      //     we need a stack of states for them to go back to the previous 
-      //     visualization. And then suddenly we have to deal with copy/paste, 
-      //     etc.
-
-      // var author = authorTextField.val();
-      // var charStr = String.fromCharCode(charCode);
-      // applyFilter(displayedGraph, authorFilter, [author + charStr]);
     }
   });
 
@@ -144,8 +137,6 @@ function fetchGraphCallback(graph) {
       e.preventDefault();
       var api = apiTextField.val();
       applyFilter(displayedGraph, apiFilter, [api]);
-    } else {
-      // Potential TODO: see author filter
     }
   }) 
 
@@ -189,6 +180,14 @@ function fetchGraphCallback(graph) {
     var maxLinkWeight = valueRange[1];
     var weightRangeSize = maxLinkWeight - minLinkWeight;
 
+    clipPath = svg.append("defs")
+        .append("clipPath")
+          .attr("id", "thumbnail-clip")
+        .append("circle")
+          .attr("r", 15)
+          .attr("cx", 0)
+          .attr("cy", 0);
+
     // add in the links
     link = svg.append("g").selectAll(".link")
         .data(currGraph.links)
@@ -226,11 +225,13 @@ function fetchGraphCallback(graph) {
         .on("dragstart", function() { 
         this.parentNode.appendChild(this); })
         .on("drag", dragmove));
+
    
     // add the circles for the nodes
     node.append("circle")
         // .attr("height", function(d) { return d.dy; })
         .attr("r", sankey.nodeWidth())
+        .attr("class", "node-circle")
         .style("fill", function(d) { 
         // color by author
         return d.color = color(d.uid.substring(0, d.uid.lastIndexOf("_")).replace(/ .*/, "")); })
@@ -239,6 +240,16 @@ function fetchGraphCallback(graph) {
       .append("title")
         .text(function(d) { 
         return d.uid + "\n" + format(d.value); });
+
+    // node
+    //     .append("clipPath")
+    //       .append("circle")
+    //         .attr("x", 0)
+    //         .attr("y", 0)
+    //         .attr("width", "20px")
+    //         .attr("height", "20px")
+    //         .attr("color", "blue");
+
 
     node.on('click', function(d) {
       // showNodeAndThreeDescendants(d);
@@ -263,7 +274,7 @@ function fetchGraphCallback(graph) {
     });
 
     // Tooltips
-    $("svg circle").tipsy({
+    $("svg circle.node-circle").tipsy({
       gravity: 'w',
       html: true,
       title: function() {
@@ -376,8 +387,9 @@ function fetchGraphCallback(graph) {
     d3.select(".x.axis").remove();
   }
 
+
   /* Draw grids everytime we zoom the axes */
-  function redrawAxes(xScale) {
+  function redrawAxes(xScale, yScale) {
     xAxisTicks = svg.selectAll(".tick line")
       .attr("y1", 0)
       .attr("y2", height)
@@ -386,20 +398,51 @@ function fetchGraphCallback(graph) {
     var startDate = sankey.nodes().minDate();
     var endDate = sankey.nodes().maxDate();
     
-      // find ms : px ratio
+    // find ms : px ratio
     var timeDiff = Math.abs(startDate.getTime() - endDate.getTime());
     var screenWidth = width - sankey.nodeWidth();
     var timeToSizeRatio = timeDiff / screenWidth;
+
+    var scale = null;
+    var yMovement = 0;
+    if (d3.event != null) {
+      var event = d3.event.sourceEvent;
+      if (event instanceof WheelEvent) {
+        var yOffset = event.offsetY
+
+        if (event.wheelDelta > 0) {
+          scale = 4 / 3;
+        } else {
+          scale = 3 / 4;
+        }
+      } else if (event instanceof MouseEvent && !circleMoved) {
+        yMovement = event.movementY;
+      }
+    }
+    circleMoved = false;
     
     var newCoordinates = sankey.nodes().map(function(d) {
       var newX = xScale(stringToDate(d.created_at).getTime());
-      
-      d3.select('#node_' + d.uid).attr("transform", 
-          "translate(" + (d.x = newX) + "," + (d.y = Math.max(margin.top + 30, Math.min(d.y))) + ")");
-      sankey.relayout();
+      var newY = d.y + yMovement;
+
+      if (scale == null) {
+        d3.select('#node_' + d.uid).attr("transform", 
+            "translate(" + (d.x = newX) + "," + 
+            (d.y =  newY) + ")");
+            // (d.y = Math.max(margin.top + 30, d.y)) + ")");
+      } else {
+        var oldOffset = d.y - yOffset;
+        var newOffset = oldOffset * scale + yOffset;
+
+        d3.select('#node_' + d.uid).attr("transform", 
+            "translate(" + (d.x = newX) + "," + (d.y = newOffset) + ")");
+      }
       link.attr("d", path);
       return newX;
     });
+
+    sankey.relayout();
+
   }
     
   /* Add timeline and move nodes to timeline position. */
@@ -413,6 +456,9 @@ function fetchGraphCallback(graph) {
     var xScale = d3.time.scale()
           .domain([startDate, endDate])
           .range([0, width]);
+    var yScale = d3.time.scale()
+          .domain([0, height])
+          .range([0, height]);
 
     var xAxis = d3.svg.axis()
       .orient("top")
@@ -432,15 +478,48 @@ function fetchGraphCallback(graph) {
 
     draw = function() {
       svg.select(".x.axis").call(xAxis);
-      redrawAxes(xScale);
+      redrawAxes(xScale, yScale);
+
+      var nodes = jQuery(".node");
+      var counter = 0;
+      for (var i = 0; i < nodes.length; i++) {
+        var currNode = nodes[i];
+        var rect = currNode.getBoundingClientRect();
+          if (rect.bottom > 0 && rect.top < height && rect.right > 0 && rect.left < width) {
+            counter++;
+          }
+      }
+
+      var zoomedIn = counter < 64;
+      if (nodesZoomed != zoomedIn) {
+        var nodeCircle = svg.selectAll('.node-circle');
+        // toggle node display type
+        if (zoomedIn) {
+          nodeCircle.attr('r', 18);
+
+          node.append("svg:image")
+            .attr("xlink:href", "assets/thumbnail1.png")
+            .attr("opacity", 0.9)
+            .attr("x", -15)
+            .attr("y", -15)
+            .attr("width", "30px")
+            .attr("height", "30px")
+            .attr("clip-path", "url(#thumbnail-clip)");
+        } else {
+          svg.selectAll("image").remove();
+          nodeCircle.attr('r', sankey.nodeWidth());
+        }
+        nodesZoomed = zoomedIn;
+      }
     }
 
     var zoom = d3.behavior.zoom()
     .x(xScale)
+    .y(yScale)
     .scaleExtent([1, 32])
     .on("zoom", draw);
 
-    redrawAxes(xScale);
+    redrawAxes(xScale, yScale);
 
     d3.select("#chart").select("svg")
       .call(zoom);
@@ -448,14 +527,17 @@ function fetchGraphCallback(graph) {
  
 // the function for moving the nodes
   function dragmove(d) {
+    circleMoved = true;
+    console.log("happening")
     d3.select(this).attr("transform", 
         "translate(" + (
-             d.x = d.x
-          ) + "," + (
-                   d.y = Math.max(margin.top + 30, Math.min(height - d.dy, d3.event.y))
+              d.x = d.x
+          ) + "," + ( 
+              d.y = Math.max(margin.top + 30, Math.min(height - d.dy, d3.event.y))
             ) + ")");
     sankey.relayout();
     link.attr("d", path);
+    console.log("happened;")
   }
 }
 
@@ -509,7 +591,4 @@ $(document).ready(function() {
     e.stopPropagation();
   })
 });
-
-
-
 
