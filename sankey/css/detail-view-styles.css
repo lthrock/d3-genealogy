@@ -1,3 +1,7 @@
+#detail-view-button {
+  margin-top: 21px;
+}
+
 .modal-outer {
 	position: fixed;
 	z-index: 1000;
@@ -218,6 +222,12 @@ canvas {
 
 .hidden-uid {
   display: none;
+}
+
+.match-buffer {
+  height: 0px;
+  overflow: hidden;
+  line-height: 80%;
 }
 
 

@@ -1,13 +1,22 @@
 #!/usr/bin/python
 
-import json, sys, getopt, re, random
+import json, sys, getopt, re, random, os, shutil
 from sets import Set
 from bs4 import BeautifulSoup
 
 # Usage: ./get_code.py -i <inputfile>
 
 def main(argv): 
-  inputfile = argv[0]
+  workingDirectory = "pipeline/"
+  inputfile = workingDirectory + argv[0]
+
+  # Remove any old output
+  outputDirectory = workingDirectory + "data/"
+  try:
+    shutil.rmtree(outputDirectory)
+  except OSError:
+    pass
+  os.makedirs(outputDirectory) 
   
   with open(inputfile) as json_data: 
     d=json.load(json_data)
@@ -16,8 +25,7 @@ def main(argv):
   
   output_json = []
   uniqueIds = Set()
-  # print "total" + str(len(code_array))
-  numThumbnails = 0;
+  numThumbnails = 0
   
   for element in code_array:
     gistid = element["_id"]
@@ -31,7 +39,7 @@ def main(argv):
 
     if (code != None):
       # if (author == "mbostock" or random.randint(0, 2) == 0):
-      filename = 'data/' + author + '_' + gistid + '.html'
+      filename = workingDirectory + 'data/' + author + '_' + gistid + '.html'
       outfile = open(filename, 'w')
       outfile.write(code)
       simple_e = {}
@@ -55,11 +63,11 @@ def main(argv):
   print "blocks with code: " + str(len(output_json))
   print "blocks with thumbnails: " + str(numThumbnails)
 
-  with open('nodes.json', 'w') as datafile:
+  with open(workingDirectory + 'nodes.json', 'w') as datafile:
     json.dump(output_json, datafile)   
     
 def get_js_only(code):  
-  soup = BeautifulSoup(code)
+  soup = BeautifulSoup(code, "lxml")
   scriptTags = soup.find_all("script")
   if (len(scriptTags) != 0):
     jsCode = ""

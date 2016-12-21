@@ -1,12 +1,27 @@
- 
-var MAX_AUTHORS_LISTED = 10; // Max length of prolific author list
+/*
+ *  NOTE: there are a number of one-line helper methods called frequently
+ *        below that are located in another file. To check these out, see:
+ *        -* helperMethods.js *-
+ */
 
-var units = "Widgets";
 
-var margin = {top: 20, right: 20, bottom: 20, left: 20},
+/*
+ * For meta analysis, this is the number of authors included in the prolific
+ * authors list
+ */
+var MAX_AUTHORS_LISTED = 10;
+var SERVER_URL = "http://localhost:8080/d3-evo";
+
+var THUMBNAIL_IMAGE_WIDTHS = 230;
+var THUMBNAIL_IMAGE_HEIGHTS = 120;
+var THUMBNAIL_HW_RATIO = THUMBNAIL_IMAGE_WIDTHS / THUMBNAIL_IMAGE_HEIGHTS;
+
+
+
+var margin = { top: 20, right: 20, bottom: 20, left: 20},
     width = window.innerWidth - margin.left - margin.right,
-    height = 800 - margin.top - margin.bottom;
- 
+    height = 650 - margin.top - margin.bottom;
+var units = "Widgets"; 
 var formatNumber = d3.format(",.0f"),    // zero decimal places
     format = function(d) { return formatNumber(d) + " " + units; },
     color = d3.scale.category20();
@@ -19,70 +34,61 @@ var svg = d3.select("#chart").append("svg")
     .attr("transform", 
           "translate(0," + margin.top + ")");
 
+/*
+ *  All colors used in nodes. Every author is assigned to a color
+ */
 var colorArray = ["#052C94", "#0E2A8C", "#182884", "#22267C", "#2C2474", "#35226D", "#3F2065", "#491E5D", "#531C55", "#5D1A4D", "#661846", "#70163E", "#7A1436", "#84122E", "#8E1026", "#970E1F", "#A10C17", "#AB0A0F", "#B50807", "#BF0700"];
-
 var colors = d3.scale.ordinal().range(colorArray).domain(d3.range(0,20));
 
+/*
+ * Used to store the number of blocks by each author, both for the full dataset
+ * and for a filtered subset
+ */
 var authorDic = {};
 var fullAuthorDic = {};
 
-var nodesZoomed = false;
+/*
+ * The currently displayed graph. 
+ * This graph must be a subset of all nodes, and may include a filter.
+ */
 var displayedGraph;
+
+/*
+ * This is a binary state, that allows us to not pan the visualization 
+ * when someone drags a node vertically.
+ */
 var circleMoved = false;
 
-// Helper methods
-function stringToDate(str) {
-  return new Date(Date.parse(str));
-}
+/*
+ * Another binary state, this is the selected thumbnail mode. 
+ * If true, the user has chosen to see author pictures rather than block
+ * thumbnails on nodes.
+ */
+ var authorThumbnailMode = true;
 
-Array.prototype.maxDate = function() {
-  return stringToDate(this.reduce(function (p, v) {
-    return stringToDate(p.created_at) > stringToDate(v.created_at) ? p : v;
-  }).created_at);
-};
+ var scaledWidth = 1;
+ var circleRadius;
 
-Array.prototype.minDate = function() {
-  return stringToDate(this.reduce(function (p, v) {
-    return stringToDate(p.created_at) < stringToDate(v.created_at) ? p : v;
-  }).created_at);
-};
-
-function linkUID(link) {
-  return link.source.uid + "," + link.target.uid;
-}
-
-// params[0] -> author
-function authorFilter(node, params) {
-  return node.uid.startsWith(params[0] + "_"); 
-}
-
-// params[0] -> api name
-function apiFilter(node, params) {
-  return node.api.includes(params[0]); 
-}
-
-
-
-sendRequest(fetchGraphCallback);
-
-function sendRequest(callback, uid=null) {
-  var params = "";
-  var datatype = "json";
-  if (uid != null) {
-    params = "?uid=" + uid
-    datatype = "text";
-  }
+/*
+ * Sends a basic GET request, with callback. 
+ * Expects response to be JSON
+ */
+function sendRequest(callback) {
   $.ajax({
     type: 'GET',
-    url: "http://localhost:8080/d3-evo" + params,
-    dataType: datatype, // data type of response
+    url: SERVER_URL,
+    dataType: "json",
     success: callback
   });
 }
 
+
+sendRequest(fetchGraphCallback);
 var nodeMap = {};
 
+
 function fetchGraphCallback(graph) {
+  console.log(graph);
   var linkMap = {};
   graph.nodes.forEach(function(x) { 
     nodeMap[x.uid] = x;
@@ -140,33 +146,52 @@ function fetchGraphCallback(graph) {
     }
   }) 
 
+  /*
+   * Iterate through all links, and find the shortest and longest identified
+   * similarities. 
+   * 
+   * Return info in form: 
+   *
+   * { min: x, max: y }
+   */
   function getValueRange(graph) {
-    var minLinkValue = -1;
-    var maxLinkValue = -1;
+    var result = {};
+    result.min = -1;
+    result.max = -1;
+
     graph.links.forEach(function(x) {
-      if (minLinkValue == -1) {
-        minLinkValue = x.lineCount;
-        maxLinkValue = x.lineCount;
+      if (result.min == -1) {
+        result.min = x.lineCount;
+        result.max = x.lineCount;
       }
-      minLinkValue = Math.min(x.lineCount, minLinkValue);
-      maxLinkValue = Math.max(x.lineCount, maxLinkValue);
+      result.min = Math.min(x.lineCount, result.min);
+      result.max = Math.max(x.lineCount, result.max);
     });
-    return [minLinkValue, maxLinkValue];
+    return result;
   }
 
+  /*
+   * Given a graph (may be a filtered version of the full graph),
+   * redraw the entire visualization. This includes the ticks, etc.
+   */
   function drawVisualization(currGraph) {
     displayedGraph = currGraph;
     drawSankey(currGraph);
     drawTimeline();
   }   
 
+  /*
+   * Draw the sankey portion of the graph 
+   */
   function drawSankey(currGraph) {
+
     // Set the sankey diagram properties
     sankey = d3.sankey()
-        .nodeWidth(6)
+        .nodeWidth(12)
         .nodePadding(10)
         .size([width, height-margin.top])
         .topMargin(3 * margin.top);
+    circleRadius = sankey.nodeWidth()  / 2;
      
     path = sankey.link();
 
@@ -175,16 +200,26 @@ function fetchGraphCallback(graph) {
         .links(currGraph.links)
         .layout(32);
 
+    /*
+     * Links are colored by the number of lines that match between two blocks:
+     *    - the more lines, the redder the link will be.
+     *
+     * That's all that this is doing.
+     */
     var valueRange = getValueRange(currGraph);
-    var minLinkWeight = valueRange[0];
-    var maxLinkWeight = valueRange[1];
+    var minLinkWeight = valueRange.min;
+    var maxLinkWeight = valueRange.max;
     var weightRangeSize = maxLinkWeight - minLinkWeight;
 
+    // radius of thumbnail pictures within nodes
+    var thumbnailRadius = sankey.nodeWidth() / 2 - 1;
+
+    // This makes it possible to have circular pictures inside of nodes.
     clipPath = svg.append("defs")
         .append("clipPath")
           .attr("id", "thumbnail-clip")
         .append("circle")
-          .attr("r", 15)
+          .attr("r", thumbnailRadius)
           .attr("cx", 0)
           .attr("cy", 0);
 
@@ -201,8 +236,7 @@ function fetchGraphCallback(graph) {
         .style("stroke", function(d) { 
           var index = Math.min((d.lineCount - minLinkWeight) / (weightRangeSize / colorArray.length), colorArray.length - 1);
           return d.color = colors(index);
-        });
-        
+        }); 
    
     // add the link titles
     link.append("title")
@@ -218,6 +252,7 @@ function fetchGraphCallback(graph) {
         .attr("class", "node")
         .attr("id", function(d) { return "node_" + d.uid} )
         .attr("created_at", function(d) { return d.created_at; })
+        .attr("thumb_url", function(d) { return d.thumb_url; })
         .attr("transform", function(d) {
           return "translate(" + d.x + "," + d.y + ")"; })
       .call(d3.behavior.drag()
@@ -226,29 +261,37 @@ function fetchGraphCallback(graph) {
         this.parentNode.appendChild(this); })
         .on("drag", dragmove));
 
-   
     // add the circles for the nodes
     node.append("circle")
         // .attr("height", function(d) { return d.dy; })
-        .attr("r", sankey.nodeWidth())
+        .attr("r", sankey.nodeWidth() / 2)
         .attr("class", "node-circle")
         .style("fill", function(d) { 
         // color by author
-        return d.color = color(d.uid.substring(0, d.uid.lastIndexOf("_")).replace(/ .*/, "")); })
+        return d.color = color(author(d)).replace(/ .*/, ""); })
         .style("stroke", function(d) { 
         return d3.rgb(d.color).darker(2); })
       .append("title")
         .text(function(d) { 
         return d.uid + "\n" + format(d.value); });
 
-    // node
-    //     .append("clipPath")
-    //       .append("circle")
-    //         .attr("x", 0)
-    //         .attr("y", 0)
-    //         .attr("width", "20px")
-    //         .attr("height", "20px")
-    //         .attr("color", "blue");
+    scaledWidth = THUMBNAIL_HW_RATIO * thumbnailRadius * 2;
+
+    // add in the images 
+    var minDimension = Math.min()
+    node.append("svg:image")
+      .attr("xlink:href", function(x) {
+        return (authorThumbnailMode ?  profilePictureUrl(x) : x.thumb_url)
+      })
+      .attr("opacity", 0.9)
+      .attr("x", authorThumbnailMode ? -thumbnailRadius : -scaledWidth / 2)
+      .attr("y", -thumbnailRadius)
+          // note: all thumbnails must be the same size, and therefore
+          // we need only use height.
+      .attr("height", (thumbnailRadius * 2) + "px") 
+      .attr("clip-path", "url(#thumbnail-clip)");
+
+
 
 
     node.on('click', function(d) {
@@ -283,15 +326,18 @@ function fetchGraphCallback(graph) {
           "<div class='callout-text'>" + 
             "<span class='attr-name'> NAME: </span>" + d.description +
             "<br>\
-            <span class='attr-name'> AUTHOR: </span>" + d.uid.substring(0, d.uid.lastIndexOf("_")) + "<br>\
+            <span class='attr-name'> AUTHOR: </span>" + author(d) + "<br>\
             <span class='attr-name'> DATE: </span>" + d.created_at + "<br>\
-            <img class='preview' src='assets/thumbnail1.png'>\
+            <img class='preview' src='" + d.thumb_url + "'>\
           </span>"
         );
       }
     });
   }
 
+  /*
+   * Given a node, add its author to the author dictionary (if necessary)
+   */
   function addNodeToAuthorDictionary(node) {
     var author = node.substring(0, node.lastIndexOf("_"));
     if (!(author in authorDic)) {
@@ -302,12 +348,20 @@ function fetchGraphCallback(graph) {
     }
   }
 
+  /*
+   * Responsible for recursing down a given tree while applying a filter 
+   * function. 
+   *
+   * While doing so, will add nodes and edges to their respective 
+   * objects to help create the new filtered visualization.
+   */
   function getSubgraph(d, nodes, edges, params, filterFunction=function() { return true }) {
     if (nodes.has(d.uid)) return;
     nodes.add(d.uid);
 
     addNodeToAuthorDictionary(d.uid);
 
+    // loop on each link, and recursively call parent method for each new link.
     function recurseOnLinks(links) {
       links.forEach(function(x) { 
         var edgeID = linkUID(x);
@@ -325,7 +379,13 @@ function fetchGraphCallback(graph) {
     recurseOnLinks(d.targetLinks);
   }
 
-  // isNodeFilter means all nodes must match filter criteria. Otherwise, only one node in a tree must match for the tree to be shown.
+  /*
+   * Applies a filter to the visualization.
+   *
+   * isNodeFilter means ALL nodes must match filter criteria. 
+   * Else, only one node in a tree must match and the full tree will be shown.
+   */
+  // 
   function applyFilter(unfilteredGraph, filterFunction, params, isNodeFilter=false) {
     authorDic = {};
 
@@ -364,6 +424,8 @@ function fetchGraphCallback(graph) {
         break;
       }
     }
+
+    // update the "fiteredGraph" to reflect changes
     var filteredGraph = { nodes: [], links: [] };
     filteredNodes.forEach(function(x) {
       filteredGraph.nodes.push(nodeMap[x]);
@@ -372,13 +434,16 @@ function fetchGraphCallback(graph) {
       filteredGraph.links.push(linkMap[x]);
     });
 
-
+    // only apply filter if there are things to show
     if (filteredGraph.nodes.length > 0) {
       clearVisualization();
       drawVisualization(filteredGraph);
     }
   }
 
+  /*
+   * Clears the visualization completely
+   */
   function clearVisualization() {
     node.remove();
     link.remove();
@@ -388,22 +453,32 @@ function fetchGraphCallback(graph) {
   }
 
 
-  /* Draw grids everytime we zoom the axes */
+  /* 
+   * Draw grids everytime we zoom the axes 
+   */
   function redrawAxes(xScale, yScale) {
     xAxisTicks = svg.selectAll(".tick line")
       .attr("y1", 0)
       .attr("y2", height)
       .style("stroke", "#ccc");
+
+    var whiteBox = svg.select("rect")
+                      .attr("width", width)
+
     
     var startDate = sankey.nodes().minDate();
     var endDate = sankey.nodes().maxDate();
     
     // find ms : px ratio
     var timeDiff = Math.abs(startDate.getTime() - endDate.getTime());
-    var screenWidth = width - sankey.nodeWidth();
+    var screenWidth = width - sankey.nodeWidth() / 2;
     var timeToSizeRatio = timeDiff / screenWidth;
 
-    var scale = null;
+    // This was the best I could do to detect the wheel direction and scale. 
+    // I'd like to incorporate some amount of acceleration, but it seems the
+    // values associated with the actual event grow exponentially. 
+    var movementScale = undefined;
+    var radiusScale = undefined;
     var yMovement = 0;
     if (d3.event != null) {
       var event = d3.event.sourceEvent;
@@ -411,48 +486,87 @@ function fetchGraphCallback(graph) {
         var yOffset = event.offsetY
 
         if (event.wheelDelta > 0) {
-          scale = 4 / 3;
+          movementScale = 16 / 15;
+          radiusScale = 10 / 9;
         } else {
-          scale = 3 / 4;
+          movementScale = 15 / 16;
+          radiusScale = 9 / 10;
         }
       } else if (event instanceof MouseEvent && !circleMoved) {
         yMovement = event.movementY;
       }
     }
     circleMoved = false;
+
+    // For efficiency's sake, first map all ids to their node object
+    //    Note: this is not the same node contained by nodeMap
+    var vizNodeMap = {};
+    Object.keys(nodeMap).forEach(function(uid) {
+      var element = d3.select('#node_' + uid);
+      if (element.length != 0) {
+        vizNodeMap[uid] = element;
+      }
+    });
     
+    // needed to update clip paths
+    var newRadius = undefined; // this should get set later
+
+    // now, loop through all nodes and translate them according to new scaling
+    // furthermore, adjust node size.
     var newCoordinates = sankey.nodes().map(function(d) {
       var newX = xScale(stringToDate(d.created_at).getTime());
       var newY = d.y + yMovement;
 
-      if (scale == null) {
-        d3.select('#node_' + d.uid).attr("transform", 
-            "translate(" + (d.x = newX) + "," + 
-            (d.y =  newY) + ")");
-            // (d.y = Math.max(margin.top + 30, d.y)) + ")");
+      var currNode = vizNodeMap[d.uid];
+
+      if (movementScale == undefined) {
+        currNode.attr("transform", "translate(" + (d.x = newX) + "," +
+                                                  (d.y = newY) + ")");
       } else {
         var oldOffset = d.y - yOffset;
-        var newOffset = oldOffset * scale + yOffset;
+        var newOffset = oldOffset * movementScale + yOffset;
 
-        d3.select('#node_' + d.uid).attr("transform", 
-            "translate(" + (d.x = newX) + "," + (d.y = newOffset) + ")");
+        currNode.attr("transform", "translate(" + (d.x = newX) + "," + 
+                                                  (d.y = newOffset) + ")")
+
+        // scale the circle based on radiusScale, and set the image width to 
+        // always be 2 less than that.
+        var circle = currNode.select("circle");
+        newRadius  = circle.attr("r") * radiusScale;
+        circleRadius = newRadius;
+        circle.attr("r", newRadius);
+
+        var scaledWidth = THUMBNAIL_HW_RATIO * newRadius * 2;
+
+        var image = currNode.select("image");
+        image.attr("height", newRadius * 2)
+             .attr("x", authorThumbnailMode ? -1 * newRadius + 1 : -scaledWidth / 2 + 1)
+             .attr("y", -1 * newRadius + 1);
       }
+
       link.attr("d", path);
       return newX;
     });
 
-    sankey.relayout();
+    // update clip paths
+    if (newRadius != undefined) {
+      clipPath.attr("r", newRadius - 1);
+    }
 
+    sankey.relayout();
   }
     
-  /* Add timeline and move nodes to timeline position. */
+  /* 
+   * Add timeline and move nodes to their position on thet timeline. 
+   */
   function drawTimeline() {
     var startDate = sankey.nodes().minDate();
     var endDate = sankey.nodes().maxDate();
 
     startDate.setDate(startDate.getDate() -20);
     endDate.setDate(endDate.getDate() +20);
-  // vertical gridlines / x axis 
+
+    // vertical gridlines / x axis 
     var xScale = d3.time.scale()
           .domain([startDate, endDate])
           .range([0, width]);
@@ -460,11 +574,18 @@ function fetchGraphCallback(graph) {
           .domain([0, height])
           .range([0, height]);
 
+    // Note: to change format - https://github.com/d3/d3/wiki/Time-Formatting
     var xAxis = d3.svg.axis()
       .orient("top")
-      // to change format: https://github.com/d3/d3/wiki/Time-Formatting
       .tickFormat(d3.time.format('%m/%y')) 
       .scale(xScale)
+
+    var whiteBox = svg.append("rect")
+                     .attr("x", 0)
+                     .attr("y", -30)
+                     .attr("width", width)
+                     .attr("height", 50)
+                     .attr("fill", "white");
 
     svg.append("g")
       .attr("transform", "translate(0," + 20 + ")")
@@ -482,35 +603,6 @@ function fetchGraphCallback(graph) {
 
       var nodes = jQuery(".node");
       var counter = 0;
-      for (var i = 0; i < nodes.length; i++) {
-        var currNode = nodes[i];
-        var rect = currNode.getBoundingClientRect();
-          if (rect.bottom > 0 && rect.top < height && rect.right > 0 && rect.left < width) {
-            counter++;
-          }
-      }
-
-      var zoomedIn = counter < 64;
-      if (nodesZoomed != zoomedIn) {
-        var nodeCircle = svg.selectAll('.node-circle');
-        // toggle node display type
-        if (zoomedIn) {
-          nodeCircle.attr('r', 18);
-
-          node.append("svg:image")
-            .attr("xlink:href", "assets/thumbnail1.png")
-            .attr("opacity", 0.9)
-            .attr("x", -15)
-            .attr("y", -15)
-            .attr("width", "30px")
-            .attr("height", "30px")
-            .attr("clip-path", "url(#thumbnail-clip)");
-        } else {
-          svg.selectAll("image").remove();
-          nodeCircle.attr('r', sankey.nodeWidth());
-        }
-        nodesZoomed = zoomedIn;
-      }
     }
 
     var zoom = d3.behavior.zoom()
@@ -524,38 +616,75 @@ function fetchGraphCallback(graph) {
     d3.select("#chart").select("svg")
       .call(zoom);
   }
- 
-// the function for moving the nodes
+  
+  /*
+   * When a node is dragged, allow it to move freely vertically.
+   * If dragged horizontally, pan the entire visualization
+   */
   function dragmove(d) {
     circleMoved = true;
-    console.log("happening")
     d3.select(this).attr("transform", 
         "translate(" + (
               d.x = d.x
           ) + "," + ( 
-              d.y = Math.max(margin.top + 30, Math.min(height - d.dy, d3.event.y))
-            ) + ")");
+              d.y = Math.max(margin.top + 30, 
+                             Math.min(height - d.dy, d3.event.y))
+          ) + ")");
     sankey.relayout();
     link.attr("d", path);
-    console.log("happened;")
   }
 }
 
-
+/*
+ * Once document is ready, add click, scroll, and resize listeners:
+ *
+ * This includes interactions with the canvas, detail view, and the ability to 
+ * toggle the detail view on and off.
+ */
 $(document).ready(function() {
-  var detailView = document.getElementById("diff-row");
 
+  /*
+   * Add on-click functionality radio buttons
+   */
+  $("#picture-selector :input").change(function() {
+    var newMode = this.value == "Author";
+    if (newMode == authorThumbnailMode) {
+      return;
+    }
+    authorThumbnailMode = newMode;
+
+    svg.selectAll(".node").each(function(d) {
+      var currNode = d3.select(this);
+      var image = currNode.select("image");
+
+      image.attr("x", function(x) {
+              return authorThumbnailMode ? -1 * circleRadius : -THUMBNAIL_HW_RATIO * circleRadius + 1
+           })
+            .attr("href", authorThumbnailMode ? profilePictureUrl(d) : d.thumb_url)
+                
+    });
+  });
+
+  /*
+   *  Add click listener for the canvas
+   */
+  var detailView = document.getElementById("diff-row");
   detailView.addEventListener('click', function(event) { 
     canvasClickFunction(event);
   }, false);
 
-
+  /*
+   * Add click listener to left arrow
+   */
   var leftArrow = document.getElementById("left-arrow");
 
   leftArrow.addEventListener('click', function(event) { 
     arrowClickFunction();
   }, false);
 
+  /*
+   * Make sure canvas rerenders on resize and scroll
+   */
   $(window).on('resize', function(){
     addCanvasHTML(numberOfMatchesPerColumn);
   });
@@ -564,26 +693,15 @@ $(document).ready(function() {
     addCanvasHTML(numberOfMatchesPerColumn);
   })
 
-  var buttonClosedStateText = "Show Detail View";
-  var buttonOpenedStateText = "Hide Detail View";
-  $(".modal-open").html(buttonClosedStateText);
-
+  /*
+   * Allow the detail view to toggle on and off
+   */
   $(".modal-open").click(function() {
-    var content = $(".modal-open").html();
-    if (content == buttonClosedStateText) {
-      $(".modal-open").html(buttonOpenedStateText);
-      $(".modal-outer").fadeIn('slow');
-
-      addCanvasHTML(numberOfMatchesPerColumn);
-    } else {
-      $(".modal-open").html(buttonClosedStateText);
-      $(".modal-outer").fadeOut('slow');
-    }
+    $(".modal-outer").fadeIn('slow');
+    addCanvasHTML(numberOfMatchesPerColumn);
   });
 
   $(".modal-outer").click(function() {
-    var buttonClosedStateText = "Show Detail View";
-    $(".modal-open").html(buttonClosedStateText);
     $(".modal-outer").fadeOut('slow');
   })
 

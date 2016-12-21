@@ -10,6 +10,7 @@ public class BasicSankeyNode {
 	protected List<String> api;
 	protected String uid;
 	protected String description;
+	protected String thumb_url;
 
 	public BasicSankeyNode() { }
 
@@ -19,6 +20,7 @@ public class BasicSankeyNode {
 		api = node.api;
 		uid = node.uid;
 		description = node.description;
+		thumb_url = node.thumb_url;
 	}
 
 	@JsonProperty
@@ -69,5 +71,15 @@ public class BasicSankeyNode {
 	@JsonProperty
 	public void setDescription(String description) {
 		this.description = description;
+	}
+
+	@JsonProperty
+	public String getThumb_url() {
+		return thumb_url;
+	}
+
+	@JsonProperty
+	public void setThumb_url(String thumb_url) {
+		this.thumb_url = thumb_url;
 	}
 }

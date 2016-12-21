@@ -51,8 +51,6 @@ public class EvolutionOfD3Resource {
             InputStream input = EvolutionOfD3Resource.class.getClass().getResourceAsStream(filename);
 
             fileData = mapper.readValue(input, SankeyData.class);
-            System.out.println(fileData);
-            System.out.println(fileData.getLinks());
 
             // Create map from the data for easy code lookup
             Map<String,String> map = new HashMap<String,String>();
@@ -65,10 +63,6 @@ public class EvolutionOfD3Resource {
 
             // Distill info required by client to create sankey
             basicData = new BasicSankeyData(fileData);
-            // System.out.println(basicData);
-            // for (BasicSankeyNode node : basicData.nodes) {
-            //     System.out.println();
-            // }
 
             return map;
         } catch (IOException e) {

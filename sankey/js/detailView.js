@@ -22,7 +22,7 @@ var selectedNodeStack = [];
  * clicks the red connection. Then, it will vertically align the blocks, 
  * trying to make the connection as horizontal as possible. 
  */
-var clickToAlignMode = false;
+var clickToAlignMode = true;
 
 /*
  * if (clickToAlignMode), this keeps track of the currently expanded div
@@ -187,7 +187,7 @@ function populateDiffs(nodes, links) {
     sendCodeRequest(callback, node.uid, i);
 
     var author = node.uid.substring(0, node.uid.lastIndexOf("_"));
-    $("#col-" + i + " .thumbnail-col.inside-full-height").html("<img src='assets/thumbnail1.png' class='code-thumbnail' alt='preview'>");
+    $("#col-" + i + " .thumbnail-col.inside-full-height").html("<img src='" + node.thumb_url + "' class='code-thumbnail' alt='preview'>");
     $("#col-" + i + " .name").html(node.description);
     $("#col-" + i + " .author").html(author);
   }
@@ -197,6 +197,7 @@ function populateDiffs(nodes, links) {
  * Finds all buffer pairs present in the HTML so that they can be referenced
  * efficiently later in "alignSimilarities()".
  */
+
 function storeBufferDivs() {
   bufferPairs = [];
   for (var i = 0; i < numberOfMatchesPerColumn.length; i++) {
@@ -213,7 +214,7 @@ function storeBufferDivs() {
 
 /*
  *
- *
+ * TODO
  *
  */
 function alignSimilarities() {
@@ -228,7 +229,6 @@ function alignSimilarities() {
   var usedBufferPairs = []; // we want to make sure that none of these ever
                             // get moved twice. If so, we undo a step
   while (tempBufferPairs.length > 0) {
-    console.log(tempBufferPairs.length);
     // find the topmost remaining similarity
     var minIndex = 0;
     var minValue = maxY(tempBufferPairs[0]);
@@ -329,13 +329,20 @@ function createCodeHTML(nodes, links, results) {
  * create red polygons connecting matches
  */
 function createBoundaryDivsForLine(idMap, lineNumber) {
+  // When a buffer expands, it should have a long "...", showing that code 
+  // exists below
+  var bufferInnerHTML = "";
+  for (var i = 0; i < 100; i++) {
+    bufferInnerHTML += ". <br>"
+  }
+
   var newHTML = "";
   if (idMap[lineNumber] != undefined) {
     var idList = idMap[lineNumber];
     for (var i = 0; i < idList.length; i++) {
       var bufferHTML = "";
       if (idList[i].includes("start")) {
-        bufferHTML = "<div class='match-buffer' id='buffer-" + idList[i] + "'> </div>";
+        bufferHTML = "<div class='match-buffer' id='buffer-" + idList[i] + "'>" + bufferInnerHTML + " </div>";
       }
       var boundaryHTML = bufferHTML + "<div class='match-boundary' id='" + idList[i] + "'> </div>";
       newHTML += boundaryHTML;
@@ -736,7 +743,7 @@ function populatePreviewList(previousNode) {
     var name = target.description;
     var author = uid.substring(0, uid.lastIndexOf("_"));
     var date = target.created_at;
-    var imageURL = "assets/thumbnail1.png"; // TODO: update this to actual preview image
+    var imageURL = target.thumb_url;
 
     var nodeHTML = $("<div class='node-preview'> </div>");
     var hiddenHTML = $("<span class='hidden-uid'> " + uid + "</span>");

@@ -9,7 +9,7 @@ public class EvolutionOfD3Configuration extends Configuration {
 
 	@NotEmpty
     // private String defaultFilename = "/d3-nest-nodes.json"; 
-    private String defaultFilename = "/10k-2kRandom-output.json"; 
+    private String defaultFilename = "/final-output.json"; 
     
 
     @NotEmpty

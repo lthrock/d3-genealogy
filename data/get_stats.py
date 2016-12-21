@@ -7,10 +7,12 @@ import csv
 import sys
 
 def main(argv):
-  idNumber = argv[0]
+
+  workingDirectory = "pipeline/"
+
   # CSV output file
-  primary_output = open('main_moss_output_' + idNumber + '.csv', 'wb')
-  detail_output = open('detail_moss_output_' + idNumber + '.csv', 'wb')
+  primary_output = open(workingDirectory + 'main_moss_output.csv', 'wb')
+  detail_output = open(workingDirectory + 'detail_moss_output.csv', 'wb')
   wr1 = csv.writer(primary_output, quoting=csv.QUOTE_ALL)
   wr2 = csv.writer(detail_output, quoting=csv.QUOTE_ALL)
 
@@ -18,8 +20,11 @@ def main(argv):
   wr2.writerow(['File 1', 'Confidence', 'Start Line', 'End Line', 'File 2', 'Confidence', 'Start Line', 'End Line'])
 
   # Fetch moss results, b-e-a-utify
-  url = "http://moss.stanford.edu/results/" + idNumber + "/"
-  htmlContents = urllib.urlopen(url).read()
+  # url = "http://moss.stanford.edu/results/" + idNumber + "/"
+  # url = "file:///Users/lucast/Desktop/d3-genealogy/mosslocal/html/"
+  url = "file:///mnt/hgfs/d3-genealogy/mosslocal/html/"
+  # htmlContents = open("../mosslocal/html/index.html")
+  htmlContents = urllib.urlopen(url + "index.html").read()
   soup = BeautifulSoup(htmlContents, 'html.parser')
 
   # to construct links for detailed info on all comparisons reported
@@ -58,6 +63,7 @@ def main(argv):
   for i in range(0, comparisonCount):
     # Get new page's html
     newUrl = url + "match" + str(i) + "-top.html"
+    # print newUrl
     htmlContents = urllib.urlopen(newUrl).read()
     soup = BeautifulSoup(htmlContents, "html.parser")
 
@@ -92,7 +98,10 @@ def main(argv):
 
       counter = 0
       row = []
-      for a in soup.findAll('a'):
+      links = soup.findAll('a')
+      del links[0 : 6]
+
+      for a in links:
         if counter % 2 == 0:
           lineRange = str(a.contents[0])
           if counter % 4 == 0:

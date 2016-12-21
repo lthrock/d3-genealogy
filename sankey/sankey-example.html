@@ -12,6 +12,7 @@
   <!-- <script type="text/javascript" src="assets/twitterbootstrap/js/bootstrap-tab.js"></script> -->
 
   <script type="text/javascript" src="http://d3js.org/d3.v3.js"></script>
+  <script type= "text/javascript" src="js/helperMethods.js"></script>
   <script type= "text/javascript" src="js/sankey.js"></script>
   <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.min.js"></script>
   <script type="text/javascript" src="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
@@ -31,9 +32,15 @@
         <h1>The Genealogy of D3 Code</h1> 
       </div>
       <div class="col-sm-3"> 
-        <button class="btn btn-primary modal-open"> Show Detail View </button>
+        <button id="detail-view-button" class="btn btn-primary modal-open"> Show Detail View </button>
       </div>
     </div>
+
+    <!-- <div class="settings-outer">
+      <div class="settings-inner">
+
+      </div>
+    </div> -->
 
     <!-- Detail View Template -->
     <div class="modal-outer">
@@ -179,7 +186,25 @@
       Author: <input class="authorFilter form-control" type="text" name="fname"><br>
       API: <input class="apiFilter form-control" type="text" name="fname"><br>
     </form>
+
     <div id="chart"></div>
+
+    <!-- <div>
+      <label class="radio-inline active"><input type="radio" name="optradio">Author Picture</label>
+      <label class="radio-inline"><input type="radio" name="optradio">Block Thumbnail</label>
+    </div> -->
+
+    <div id="picture-selector" class="btn-group" data-toggle="buttons">
+      <label class="btn btn-default active">
+          <input type="radio" name="picture-selector" value="Author"> 
+            <img src="assets/profileIcon.png" width="20" />
+      </label>
+      <label class="btn btn-default">
+          <input type="radio" name="picture-selector" value="Visualization"> 
+            <img src="assets/graphIcon.png" width="20" />
+      </label>
+    </div>
+
   </div>
   
   <script type= "text/javascript" src="js/generateHTML.js"></script>
